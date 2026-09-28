@@ -1,0 +1,2 @@
+# Raw CERT r5.2 CSV dataset folder (excluded from git)
+# Place logon.csv, device.csv, email.csv, file.csv, http.csv, psychometric.csv here on training host.

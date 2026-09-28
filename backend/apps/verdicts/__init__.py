@@ -1,0 +1,1 @@
+"""Verdicts app package."""

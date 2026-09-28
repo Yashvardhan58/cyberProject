@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Large Datasets & Raw Logs (DO NOT COMMIT)
+backend/ml/data/raw/*
+!backend/ml/data/raw/.gitkeep
+backend/ml/data/processed/full_*
+
+# ML Model Binaries (Save to artifact storage)
+backend/ml/models/saved/*.joblib
+backend/ml/models/saved/*.pkl
+!backend/ml/models/saved/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Internal Notes, Guides & Scratch Folders (Excluded from repository)
+Memory.md
+QUICKSTART*.md
+MAC_TRAINING*.md
+Synopsis/
+Phases.md
+Rules.md
+START_APPLICATION.bat

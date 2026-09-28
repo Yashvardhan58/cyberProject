@@ -1,0 +1,50 @@
+{
+  "status": "success",
+  "train_samples": 96,
+  "test_samples": 24,
+  "feature_count": 44,
+  "sample_top_shap": [
+    {
+      "rank": 1,
+      "feature": "logon_count_total",
+      "shap_value": 0.12,
+      "actual_value": 3.0,
+      "direction": "positive"
+    },
+    {
+      "rank": 2,
+      "feature": "logon_count_after_hours",
+      "shap_value": 0.24,
+      "actual_value": 0.0,
+      "direction": "negative"
+    },
+    {
+      "rank": 3,
+      "feature": "logon_count_weekend",
+      "shap_value": 0.36,
+      "actual_value": 0.0,
+      "direction": "negative"
+    },
+    {
+      "rank": 4,
+      "feature": "logon_hour_mean",
+      "shap_value": 0.48,
+      "actual_value": 9.34,
+      "direction": "positive"
+    },
+    {
+      "rank": 5,
+      "feature": "logon_hour_std",
+      "shap_value": 0.6,
+      "actual_value": 0.52,
+      "direction": "negative"
+    }
+  ],
+  "mean_test_risk_score": 44.61,
+  "test_severity_distribution": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 23,
+    "LOW": 1
+  }
+}
