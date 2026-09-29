@@ -7,44 +7,286 @@
     {
       "rank": 1,
       "feature": "logon_count_total",
-      "shap_value": 0.12,
+      "shap_value": -3.3686,
       "actual_value": 3.0,
-      "direction": "positive"
+      "direction": "negative"
     },
     {
       "rank": 2,
       "feature": "logon_count_after_hours",
-      "shap_value": 0.24,
+      "shap_value": -0.6818,
       "actual_value": 0.0,
       "direction": "negative"
     },
     {
       "rank": 3,
       "feature": "logon_count_weekend",
-      "shap_value": 0.36,
+      "shap_value": -0.1073,
       "actual_value": 0.0,
       "direction": "negative"
     },
     {
       "rank": 4,
-      "feature": "logon_hour_mean",
-      "shap_value": 0.48,
-      "actual_value": 9.34,
-      "direction": "positive"
+      "feature": "logon_hour_std",
+      "shap_value": -0.0708,
+      "actual_value": 0.52,
+      "direction": "negative"
     },
     {
       "rank": 5,
-      "feature": "logon_hour_std",
-      "shap_value": 0.6,
-      "actual_value": 0.52,
-      "direction": "negative"
+      "feature": "http_job_search_domain_count",
+      "shap_value": 0.0,
+      "actual_value": 0.0,
+      "direction": "positive"
     }
   ],
-  "mean_test_risk_score": 44.61,
+  "mean_test_risk_score": 31.36,
   "test_severity_distribution": {
     "CRITICAL": 0,
-    "HIGH": 0,
-    "MEDIUM": 23,
-    "LOW": 1
-  }
+    "HIGH": 1,
+    "MEDIUM": 5,
+    "LOW": 18
+  },
+  "ranked_users": [
+    {
+      "user_id": "USR0001",
+      "role": "Software Engineer",
+      "date": "2026-01-11",
+      "is_insider": 1,
+      "score": 71.5,
+      "severity": "HIGH",
+      "xgb_prob": 0.986,
+      "if_score": 0.997
+    },
+    {
+      "user_id": "USR0006",
+      "role": "Software Engineer",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 30.2,
+      "severity": "MEDIUM",
+      "xgb_prob": 0.014,
+      "if_score": 0.974
+    },
+    {
+      "user_id": "USR0008",
+      "role": "Financial Analyst",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 30.2,
+      "severity": "MEDIUM",
+      "xgb_prob": 0.014,
+      "if_score": 0.977
+    },
+    {
+      "user_id": "USR0008",
+      "role": "Financial Analyst",
+      "date": "2026-01-10",
+      "is_insider": 0,
+      "score": 30.1,
+      "severity": "MEDIUM",
+      "xgb_prob": 0.014,
+      "if_score": 0.971
+    },
+    {
+      "user_id": "USR0007",
+      "role": "Systems Administrator",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 30.1,
+      "severity": "MEDIUM",
+      "xgb_prob": 0.014,
+      "if_score": 0.973
+    },
+    {
+      "user_id": "USR0006",
+      "role": "Software Engineer",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 30.1,
+      "severity": "MEDIUM",
+      "xgb_prob": 0.014,
+      "if_score": 0.973
+    },
+    {
+      "user_id": "USR0003",
+      "role": "Financial Analyst",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 30.0,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.982
+    },
+    {
+      "user_id": "USR0007",
+      "role": "Systems Administrator",
+      "date": "2026-01-10",
+      "is_insider": 0,
+      "score": 29.9,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.973
+    },
+    {
+      "user_id": "USR0010",
+      "role": "Sales Executive",
+      "date": "2026-01-10",
+      "is_insider": 0,
+      "score": 29.9,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.975
+    },
+    {
+      "user_id": "USR0010",
+      "role": "Sales Executive",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 29.8,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.969
+    },
+    {
+      "user_id": "USR0004",
+      "role": "HR Coordinator",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 29.7,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.972
+    },
+    {
+      "user_id": "USR0001",
+      "role": "Software Engineer",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.7,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.977
+    },
+    {
+      "user_id": "USR0003",
+      "role": "Financial Analyst",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.6,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.97
+    },
+    {
+      "user_id": "USR0009",
+      "role": "HR Coordinator",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.6,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.977
+    },
+    {
+      "user_id": "USR0002",
+      "role": "Systems Administrator",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 29.5,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.974
+    },
+    {
+      "user_id": "USR0007",
+      "role": "Systems Administrator",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.5,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.977
+    },
+    {
+      "user_id": "USR0009",
+      "role": "HR Coordinator",
+      "date": "2026-01-10",
+      "is_insider": 0,
+      "score": 29.4,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.975
+    },
+    {
+      "user_id": "USR0004",
+      "role": "HR Coordinator",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.3,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.973
+    },
+    {
+      "user_id": "USR0005",
+      "role": "Sales Executive",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 29.2,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.968
+    },
+    {
+      "user_id": "USR0005",
+      "role": "Sales Executive",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.2,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.974
+    },
+    {
+      "user_id": "USR0010",
+      "role": "Sales Executive",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.2,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.969
+    },
+    {
+      "user_id": "USR0009",
+      "role": "HR Coordinator",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 29.1,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.969
+    },
+    {
+      "user_id": "USR0002",
+      "role": "Systems Administrator",
+      "date": "2026-01-12",
+      "is_insider": 0,
+      "score": 29.0,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.971
+    },
+    {
+      "user_id": "USR0008",
+      "role": "Financial Analyst",
+      "date": "2026-01-11",
+      "is_insider": 0,
+      "score": 28.9,
+      "severity": "LOW",
+      "xgb_prob": 0.014,
+      "if_score": 0.964
+    }
+  ]
 }

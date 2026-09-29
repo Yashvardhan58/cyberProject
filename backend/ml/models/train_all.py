@@ -122,9 +122,43 @@ def run_training_pipeline() -> Dict[str, Any]:
         score, severity, breakdown = RiskFusionEngine.calculate_risk_score(
             p_xgb=p_x, s_if=s_i, d_peer=d_p, d_user=d_u
         )
-        risk_results.append({"user_id": test_row["user_id"], "score": score, "severity": severity})
+        risk_results.append({
+            "user_id": test_row["user_id"],
+            "role": test_row.get("role", "Unknown"),
+            "date": test_row.get("date", "N/A"),
+            "is_insider": int(test_row.get("is_insider", 0)),
+            "score": round(score, 1),
+            "severity": severity,
+            "xgb_prob": round(p_x, 3),
+            "if_score": round(s_i, 3),
+        })
 
     mean_score = sum(r["score"] for r in risk_results) / len(risk_results)
+
+    # Sort users by risk score descending (highest risk first)
+    sorted_results = sorted(risk_results, key=lambda x: x["score"], reverse=True)
+
+    print("\n" + "=" * 90)
+    print("                     EVALUATED TEST USERS & RISK RANKING TABLE")
+    print("=" * 90)
+    print(f"{'Rank':<5} | {'User ID':<12} | {'Role':<20} | {'Score':<7} | {'Severity':<9} | {'Is Insider?':<12} | {'Verdict'}")
+    print("-" * 90)
+    for rank, r in enumerate(sorted_results, 1):
+        actual = "YES (Threat)" if r["is_insider"] == 1 else "NO (Normal)"
+        if r["score"] >= 65 and r["is_insider"] == 1:
+            verdict = "[+] TRUE POSITIVE (Caught)"
+        elif r["score"] >= 65 and r["is_insider"] == 0:
+            verdict = "[!] FALSE ALARM"
+        elif r["score"] < 65 and r["is_insider"] == 1:
+            verdict = "[-] MISSED THREAT"
+        else:
+            verdict = "[.] TRUE NEGATIVE (Normal)"
+
+        print(
+            f"{rank:<5} | {r['user_id']:<12} | {r['role']:<20} | {r['score']:<7} | "
+            f"{r['severity']:<9} | {actual:<12} | {verdict}"
+        )
+    print("-" * 90)
 
     summary = {
         "status": "success",
@@ -138,7 +172,8 @@ def run_training_pipeline() -> Dict[str, Any]:
             "HIGH": sum(1 for r in risk_results if r["severity"] == "HIGH"),
             "MEDIUM": sum(1 for r in risk_results if r["severity"] == "MEDIUM"),
             "LOW": sum(1 for r in risk_results if r["severity"] == "LOW"),
-        }
+        },
+        "ranked_users": sorted_results
     }
 
     with open(saved_models_dir / "training_summary.json", "w", encoding="utf-8") as f:
@@ -155,3 +190,4 @@ def run_training_pipeline() -> Dict[str, Any]:
 
 if __name__ == "__main__":
     run_training_pipeline()
+
