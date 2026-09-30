@@ -247,6 +247,9 @@ Algorithm~\ref{alg:baseline_governance} outlines the complete operational decisi
 \end{algorithmic}
 \end{algorithm}
 
+\subsection{Operational Execution via Celery Asynchronous Queue}
+In large-scale enterprise deployments, executing four-stage governance checks (computing historical deviation differentials, cohort centroid distances, and 7-day monotonicity arrays) across hundreds or thousands of active employee profiles is computationally non-trivial. To decouple mathematical governance audits from user-facing REST API response times, the evaluation pipeline is encapsulated within an asynchronous Celery task (\texttt{apps/baselines/tasks.py}) mapped to a dedicated \texttt{governance} queue. Candidate updates and resulting audit logs are committed atomically to PostgreSQL, ensuring resilient, non-blocking operational execution.
+
 \section{Experimental Evaluation and Results}
 \label{sec:experiments}
 
@@ -349,6 +352,7 @@ In adherence to scientific integrity guidelines, Table~\ref{tab:implementation_s
 \midrule
 Rolling Baseline Engine & Implemented & \texttt{ml/baseline/baseline\_engine.py} \\
 4-Stage Governance Engine & Implemented & \texttt{ml/baseline/governance.py} \\
+Baseline Governance Task Queue & Implemented & \texttt{apps/baselines/tasks.py} \\
 Governance Logging & Implemented & \texttt{baselines\_governancelog} \\
 Poisoning Benchmark (E2) & Verified & \texttt{ml/experiments/e2\_poisoning\_simulation.py} \\
 Governance Defense (E3) & Verified & \texttt{ml/experiments/e3\_governance\_validation.py} \\

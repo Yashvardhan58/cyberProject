@@ -4,6 +4,7 @@ import { alertsApi } from '../api/alerts';
 import { chatApi } from '../api/chat';
 import ChatMessage from '../components/common/ChatMessage';
 import FeatureBar from '../components/common/FeatureBar';
+import ExplanationPanel from '../components/common/ExplanationPanel';
 import { 
   Send, 
   Sparkles, 
@@ -391,6 +392,17 @@ Feel free to ask for detailed containment steps, TreeSHAP feature explanations, 
               <span className="font-mono text-rose-400 font-semibold">QUARANTINED</span>
             </div>
           </div>
+
+          {/* Celery Async Explanation Controller (202 Accepted + 2s Polling) */}
+          {id && (
+            <ExplanationPanel
+              alertId={id}
+              onCompleted={(completedData) => {
+                // Prepend or inform analyst of freshly completed explanation
+                console.log('Async Celery explanation completed:', completedData);
+              }}
+            />
+          )}
 
           {/* TreeSHAP Feature Attributions */}
           <div>

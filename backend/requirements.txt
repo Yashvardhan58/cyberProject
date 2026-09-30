@@ -9,10 +9,9 @@ python-decouple>=3.8
 # Database Drivers (optional - only needed for PostgreSQL)
 # psycopg2-binary>=2.9.9
 
-# Asynchronous Task Queue (optional - only needed for Celery workers)
-# celery>=5.3.6
-# redis>=5.0.1
-# django-celery-results>=2.5.1
+# Asynchronous Task Queue (Production Docker workers)
+celery>=5.3.0,<5.4.0
+redis>=5.0.0,<5.1.0
 
 # Machine Learning & Data Science
 numpy>=2.0.0

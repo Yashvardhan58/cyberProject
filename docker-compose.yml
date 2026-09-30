@@ -13,13 +13,23 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ueba_user -d ueba_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   redis:
     image: redis:7-alpine
     container_name: ueba_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   backend:
     build:
@@ -36,17 +46,40 @@ services:
       - DJANGO_SETTINGS_MODULE=config.settings.dev
       - DATABASE_URL=postgresql://ueba_user:ueba_password@db:5432/ueba_db
       - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
-  celery:
+  worker-llm:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ueba_celery
+    container_name: ueba_worker_llm
     restart: unless-stopped
-    command: celery -A config worker -l info
+    command: celery -A config worker -Q llm -c 2 -n llm@%h -l info
+    volumes:
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - DATABASE_URL=postgresql://ueba_user:ueba_password@db:5432/ueba_db
+      - REDIS_URL=redis://redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker-governance:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ueba_worker_governance
+    restart: unless-stopped
+    command: celery -A config worker -Q governance -c 1 -n gov@%h -l info
     volumes:
       - ./backend:/app
     environment:
@@ -54,8 +87,10 @@ services:
       - DATABASE_URL=postgresql://ueba_user:ueba_password@db:5432/ueba_db
       - REDIS_URL=redis://redis:6379/0
     depends_on:
-      - backend
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build:

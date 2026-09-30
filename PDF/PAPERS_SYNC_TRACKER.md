@@ -77,6 +77,8 @@
 | Local TreeSHAP Explainer | Implemented (`shap_explainer.py`) | Verified | No | Section VI |
 | Evidence Builder Payload | Implemented (`evidence_builder.py`) | Verified (E5) | No | Section VI |
 | Claude API Integration Client | Implemented (`llm_client.py`) | Verified (E5) | No | Section VI |
+| Baseline Governance Task Queue (Celery) | Implemented (`apps/baselines/tasks.py`) | Verified | Section IV & Table 3 | No |
+| LLM Explanation Task Queue (Celery) | Implemented (`apps/explanations/tasks.py`) | Verified (Unit tests 1-7) | No | Section VII & Table 3 |
 | Django REST API Endpoints | Implemented (`backend/apps/`) | Verified | Architecture | Section VII |
 | React 18 6-Page Dashboard | Implemented (`frontend/src/`) | Verified | No | Section VII |
 | Full 15GB CERT Tarball Cluster Scale-Up | Automation Staged (`mac_setup_and_train.sh`) | **TBD / Planned** | Preserved via `%` in LaTeX | Preserved via `%` in LaTeX |

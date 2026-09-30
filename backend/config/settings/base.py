@@ -112,3 +112,49 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# -----------------------------------------------------------------------------
+# Celery 5.3 + Redis 7 Asynchronous Task Configuration
+# -----------------------------------------------------------------------------
+# 1. Dual-Environment Broker Fallback:
+#    - Inside Docker: Uses REDIS_URL=redis://redis:6379/0 (internal container network)
+#    - Local Windows: Falls back to redis://localhost:6379/0 without throwing KeyError
+CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# 2. Source of Truth & No Result Backend Bloat:
+#    - Explanations and governance audit logs are persisted directly in PostgreSQL/SQLite.
+#    - Redis is strictly used as a lightweight message broker, saving memory.
+CELERY_TASK_IGNORE_RESULT = True
+
+# 3. Message Redelivery & Reliability (acks_late):
+#    - Worker acknowledges the task only AFTER execution finishes successfully.
+#    - If a worker crashes mid-task, the job is not lost and is safely redelivered.
+CELERY_TASK_ACKS_LATE = True
+
+# 4. Free LLM API Protection (Prefetch Multiplier = 1):
+#    - Prevents a worker from hogging multiple Claude jobs in advance.
+#    - Each worker thread pulls only 1 task at a time, preventing token bursts and rate-limit spikes.
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# 5. Execution Time Limits (Guard against hanging LLM network calls):
+#    - Soft Limit (60s): Raises SoftTimeLimitExceeded inside the task to gracefully mark row FAILED.
+#    - Hard Limit (90s): Hard SIGKILL by OS if process hangs indefinitely.
+CELERY_TASK_SOFT_TIME_LIMIT = 60
+CELERY_TASK_TIME_LIMIT = 90
+
+# 6. Broker Connection Retries & Visibility Timeout:
+#    - Retries Redis connection on boot if Redis container starts slightly after the worker.
+#    - visibility_timeout (3600s = 1hr): Ensures tasks are not prematurely redelivered while executing.
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}
+
+# 7. Queue Segregation (Fast Lane vs. Slow Lane):
+#    - queue "llm": Consumed exclusively by worker-llm (concurrency 2) for Claude API calls.
+#    - queue "governance": Consumed by worker-governance (concurrency 1) for CPU-bound pandas baseline audits.
+#    - Prevents heavy periodic governance checks from blocking urgent SOC alert explanations.
+CELERY_TASK_ROUTES = {
+    "apps.explanations.tasks.generate_alert_explanation_task": {"queue": "llm"},
+    "*.generate_alert_explanation_task": {"queue": "llm"},
+    "apps.baselines.tasks.run_baseline_governance_task": {"queue": "governance"},
+    "governance.*": {"queue": "governance"},
+}

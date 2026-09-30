@@ -7,7 +7,7 @@ from .models import Explanation, ChatSession, ChatMessage
 
 
 class ExplanationSerializer(serializers.ModelSerializer):
-    """Serializer for AI Explanation."""
+    """Serializer for AI Explanation and Celery Task Status."""
     alert_title = serializers.CharField(source="alert.title", read_only=True)
     alert_severity = serializers.CharField(source="alert.severity", read_only=True)
     user_name = serializers.CharField(source="alert.user.name", read_only=True)
@@ -20,11 +20,17 @@ class ExplanationSerializer(serializers.ModelSerializer):
             "alert_title",
             "alert_severity",
             "user_name",
+            "evidence_hash",
+            "status",
+            "text",
             "explanation_text",
+            "error",
+            "attempts",
             "faithfulness_score",
             "model_name",
             "evidence_object",
             "created_at",
+            "finished_at",
         ]
 
 
