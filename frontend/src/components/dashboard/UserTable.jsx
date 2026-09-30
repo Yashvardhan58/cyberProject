@@ -40,7 +40,7 @@ export default function UserTable({ users = [], isLoading = false }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className="w-full text-left text-xs min-w-[560px]">
           <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800/80">
             <tr>
               <th className="py-3 px-4">User ID & Name</th>

@@ -1,21 +1,52 @@
-import React from 'react';
-import { Shield, Bell, RefreshCw, Radio } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Bell, RefreshCw, Radio, Menu, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const Navbar = () => {
-  const { triggerRefresh } = useApp();
+  const { 
+    triggerRefresh, 
+    isSidebarOpen, 
+    toggleSidebar, 
+    isSidebarCollapsed, 
+    toggleSidebarCollapse 
+  } = useApp();
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  const handleRefresh = () => {
+    setIsSpinning(true);
+    triggerRefresh();
+    setTimeout(() => setIsSpinning(false), 700);
+  };
+
+  const handleMenuClick = () => {
+    if (window.innerWidth < 768) {
+      toggleSidebar();
+    } else {
+      toggleSidebarCollapse();
+    }
+  };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-blue-900 text-white rounded-lg shadow-md flex items-center justify-center">
+    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm transition-all duration-200">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Clickable Menu Toggle Button (Desktop Collapse + Mobile Drawer) */}
+        <button
+          onClick={handleMenuClick}
+          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-all duration-200 flex items-center justify-center focus:outline-none active:scale-95 group"
+          title="Toggle Navigation Menu (Expand / Collapse)"
+          aria-label="Toggle Navigation Menu"
+        >
+          <Menu className="w-5 h-5 transition-transform duration-300 group-hover:scale-110 text-slate-700 group-hover:text-blue-600" />
+        </button>
+
+        <div className="p-2 bg-blue-900 text-white rounded-lg shadow-md flex items-center justify-center shrink-0">
           <Shield className="w-5 h-5" />
         </div>
-        <div>
-          <h1 className="text-base font-bold text-slate-900 leading-tight">
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-tight truncate">
             Adaptive UEBA Intelligence
           </h1>
-          <p className="text-xs text-slate-500 font-mono">
+          <p className="hidden sm:block text-[11px] text-slate-500 font-mono truncate">
             CMU CERT r5.2 • Contamination-Resistant Engine Active
           </p>
         </div>
@@ -30,11 +61,11 @@ const Navbar = () => {
 
         {/* Manual Refresh Action */}
         <button
-          onClick={triggerRefresh}
-          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors"
-          title="Refresh Data"
+          onClick={handleRefresh}
+          className="p-2 text-slate-600 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-all"
+          title="Refresh Data across active dashboard"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 ${isSpinning ? 'animate-spin text-blue-600' : ''}`} />
         </button>
 
         {/* Analyst Profile Badge */}

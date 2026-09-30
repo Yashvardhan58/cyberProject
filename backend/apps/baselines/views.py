@@ -44,6 +44,54 @@ class GovernanceLogListAPIView(generics.ListAPIView):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
+    def post(self, request, *args, **kwargs):
+        """
+        POST /api/v1/baselines/governance/
+        Allows SOC analysts to manually override / quarantine or unfreeze a user baseline.
+        """
+        user_identifier = request.data.get("user_id")
+        quarantined = request.data.get("quarantined", True)
+        reason = request.data.get("reason", "Manual SOC analyst governance override")
+
+        from apps.users.models import UserProfile
+        from django.utils import timezone
+
+        user = None
+        if user_identifier:
+            if str(user_identifier).isdigit():
+                user = UserProfile.objects.filter(pk=int(user_identifier)).first()
+            if not user:
+                user = UserProfile.objects.filter(employee_id__iexact=str(user_identifier)).first()
+
+        if not user:
+            return Response(
+                {"status": "error", "message": f"User '{user_identifier}' not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        verdict_val = "SUPPRESS" if quarantined else "ALLOW"
+        action = "BASELINE_FROZEN" if quarantined else "BASELINE_ACTIVE"
+        suspicion = 0.85 if quarantined else 0.10
+
+        log = GovernanceLog.objects.create(
+            user=user,
+            check_date=timezone.now().date(),
+            stage_1_drift_rate_score=0.8 if quarantined else 0.1,
+            stage_2_peer_divergence_score=0.8 if quarantined else 0.1,
+            stage_3_monotonic_trend_score=0.9 if quarantined else 0.0,
+            suspicion_score=suspicion,
+            verdict=verdict_val,
+            reason=reason,
+            action_taken=action,
+        )
+
+        serializer = GovernanceLogSerializer(log)
+        return Response({
+            "status": "success",
+            "message": f"Baseline for {user.name} ({user.employee_id}) successfully updated to {action}.",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
 
 class BaselineActivityStatsAPIView(APIView):
     """

@@ -35,9 +35,12 @@ export default function VerdictCard({
     setIsSubmitting(true);
     try {
       await verdictsApi.submitVerdict(alertId, {
-        verdict: verdict === 'TP' ? 'TRUE_POSITIVE' : 'FALSE_POSITIVE',
-        notes: analystNotes || (verdict === 'TP' ? 'Confirmed malicious behavioral spike' : 'Authorized operational role drift'),
+        verdict: verdict === 'TP' ? 'TP' : 'FP',
+        analyst_note: analystNotes || (verdict === 'TP' ? 'Confirmed malicious behavioral spike' : 'Authorized operational role drift'),
+        analyst_name: 'SOC Analyst L2',
         quarantine_baseline: verdict === 'TP' ? quarantineBaseline : false,
+        // Legacy keys kept for backwards compatibility:
+        notes: analystNotes || (verdict === 'TP' ? 'Confirmed malicious behavioral spike' : 'Authorized operational role drift'),
         analyst_id: 'ANALYST_SOC_L2'
       });
 

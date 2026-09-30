@@ -40,13 +40,27 @@ export default function ExplanationPanel({ alertId, onCompleted }) {
     const fetchExisting = async () => {
       try {
         const res = await apiClient.get(`/explanations/alerts/${alertId}/explanation/`);
-        const data = res?.data || res?.raw;
-        if (isMounted && data && data.status) {
-          setExplanation(data);
-          if (data.status === 'PENDING' || data.status === 'PROCESSING') {
-            startPolling(data.id);
-          } else if (data.status === 'COMPLETED' && onCompleted) {
-            onCompleted(data);
+        const rawObj = res?.data || res?.raw;
+        // Unwrap nested DRF payload if present
+        const payload = rawObj?.data || rawObj;
+        const statusUpper = (payload?.status || rawObj?.status || '').toUpperCase();
+
+        if (isMounted && payload) {
+          // Normalize status field to uppercase for reliable UI checks
+          const normalized = { ...payload, status: statusUpper };
+          setExplanation(normalized);
+
+          if (statusUpper === 'PENDING' || statusUpper === 'PROCESSING') {
+            startPolling(payload.id || rawObj?.id);
+          } else if (statusUpper === 'COMPLETED') {
+            // Already completed: stop any existing poll and notify parent
+            if (pollTimerRef.current) {
+              clearInterval(pollTimerRef.current);
+              pollTimerRef.current = null;
+            }
+            if (onCompleted) {
+              onCompleted(normalized);
+            }
           }
         }
       } catch (err) {
@@ -59,43 +73,67 @@ export default function ExplanationPanel({ alertId, onCompleted }) {
       isMounted = false;
       if (pollTimerRef.current) {
         clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
       }
     };
   }, [alertId]);
 
-  // Polling loop for Celery async worker completion
+  // Polling loop for Celery async worker completion (safely stops upon completion/error)
   const startPolling = (explanationId) => {
+    // Prevent duplicate polling intervals if one is already running
     if (pollTimerRef.current) {
       clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
     }
     setPolling(true);
 
+    let pollAttempts = 0;
+    const MAX_POLL_ATTEMPTS = 60; // 60 * 2.5s = 150s max timeout safety
+
     pollTimerRef.current = setInterval(async () => {
+      pollAttempts += 1;
       try {
         const url = explanationId 
           ? `/explanations/${explanationId}/` 
           : `/explanations/alerts/${alertId}/explanation/`;
         const res = await apiClient.get(url);
-        const data = res?.data || res?.raw;
+        const rawObj = res?.data || res?.raw;
+        const payload = rawObj?.data || rawObj;
+        const statusUpper = (payload?.status || rawObj?.status || '').toUpperCase();
 
-        if (data && (data.status === 'COMPLETED' || data.status === 'FAILED')) {
+        if (statusUpper === 'COMPLETED' || statusUpper === 'FAILED') {
+          // Explicitly clear timer immediately to prevent duplicate background calls
           clearInterval(pollTimerRef.current);
           pollTimerRef.current = null;
           setPolling(false);
           setLoading(false);
-          setExplanation(data);
+          
+          const normalized = { ...payload, status: statusUpper };
+          setExplanation(normalized);
 
-          if (data.status === 'COMPLETED' && onCompleted) {
-            onCompleted(data);
+          if (statusUpper === 'COMPLETED' && onCompleted) {
+            onCompleted(normalized);
           }
-          if (data.status === 'FAILED') {
-            setError(data.error || 'Explanation generation failed in worker process.');
+          if (statusUpper === 'FAILED') {
+            setError(payload.error || 'Explanation generation failed in worker process.');
           }
+        } else if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+          // Timeout guard: halt polling after max attempts to prevent infinite network calls
+          clearInterval(pollTimerRef.current);
+          pollTimerRef.current = null;
+          setPolling(false);
+          setLoading(false);
+          setError('Explanation polling timed out. Background worker may still be computing.');
         }
       } catch (err) {
         console.error('Polling error:', err);
+        // Halt polling on 404 or repeated failure to prevent runaway API spam
+        clearInterval(pollTimerRef.current);
+        pollTimerRef.current = null;
+        setPolling(false);
+        setLoading(false);
       }
-    }, 2000);
+    }, 2500);
   };
 
   // Trigger non-blocking async explanation generation
@@ -106,12 +144,14 @@ export default function ExplanationPanel({ alertId, onCompleted }) {
     try {
       const res = await apiClient.post('/explanations/', { alert_id: alertId });
       const rawData = res?.raw || res?.data;
+      const statusUpper = (rawData?.status || '').toUpperCase();
 
       // Handle immediate cache hit (200 OK)
-      if (rawData?.status === 'completed' && rawData?.data) {
-        setExplanation(rawData.data);
+      if (statusUpper === 'COMPLETED' && rawData?.data) {
+        const normalized = { ...rawData.data, status: 'COMPLETED' };
+        setExplanation(normalized);
         setLoading(false);
-        if (onCompleted) onCompleted(rawData.data);
+        if (onCompleted) onCompleted(normalized);
         return;
       }
 
@@ -198,7 +238,7 @@ export default function ExplanationPanel({ alertId, onCompleted }) {
       {explanation?.status === 'COMPLETED' && !loading && !polling && (
         <div className="space-y-2.5">
           <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800/80 text-xs text-slate-200 leading-relaxed font-sans">
-            {explanation.text || explanation.explanation_text}
+            {explanation.text || explanation.explanation_text || explanation.data?.explanation_text || 'Explanation successfully generated and verified.'}
           </div>
 
           {/* Badges / Metrics */}

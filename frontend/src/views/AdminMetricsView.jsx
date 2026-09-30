@@ -14,11 +14,14 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { useApp } from '../context/AppContext';
+
 /**
  * AdminMetricsView Component
  * M.Tech Thesis evaluation benchmark view containing experimental validation data (E1 through E5).
  */
 export default function AdminMetricsView() {
+  const { refreshTrigger } = useApp() || {};
   const [experiments, setExperiments] = useState([]);
   const [summary, setSummary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,7 +45,7 @@ export default function AdminMetricsView() {
 
   useEffect(() => {
     fetchMetrics();
-  }, []);
+  }, [refreshTrigger]);
 
   // Benchmark comparison dataset (E1)
   const modelBenchmarks = [
@@ -174,7 +177,7 @@ export default function AdminMetricsView() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[640px]">
             <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
               <tr>
                 <th className="py-3 px-4">Architecture</th>

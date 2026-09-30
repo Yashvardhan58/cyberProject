@@ -40,11 +40,14 @@ export default function ChatView() {
 
   // Fetch alert details and initialize AI session
   useEffect(() => {
+    let isCancelled = false;
+
     const initChat = async () => {
       setIsLoadingAlert(true);
       try {
         if (id) {
           const res = await alertsApi.getAlertById(id);
+          if (isCancelled) return;
           const alertData = res.data?.data || res.data || res;
           setAlert(alertData);
 
@@ -54,42 +57,53 @@ export default function ChatView() {
 
           try {
             const sessionRes = await chatApi.createSession(id);
-            const token = sessionRes.data?.data?.session_token || sessionRes.data?.session_token || `session-${id}-${Date.now()}`;
-            setSessionToken(token);
+            if (!isCancelled) {
+              const token = sessionRes.data?.data?.session_token || sessionRes.data?.session_token || `session-${id}-${Date.now()}`;
+              setSessionToken(token);
+            }
           } catch (e) {
-            setSessionToken(`session-${id}-${Date.now()}`);
+            if (!isCancelled) setSessionToken(`session-${id}-${Date.now()}`);
           }
 
-          setMessages([{
-            role: 'assistant',
-            content: `Hello Analyst. I am your UEBA SOC Copilot, grounded strictly on CERT r5.2 behavioral telemetry and TreeSHAP attribution data for Alert #${id} (User: **${targetName}** / \`${targetEmpId}\`, Risk Score: **${scoreVal}**).\n\nI can explain feature contributions, baseline deviations, and poisoning resistance. How can I assist your investigation?`,
-            timestamp: new Date().toISOString(),
-            modelName: 'claude-3-5-sonnet'
-          }]);
+          if (!isCancelled) {
+            setMessages([{
+              role: 'assistant',
+              content: `Hello Analyst. I am your UEBA SOC Copilot, grounded strictly on CERT r5.2 behavioral telemetry and TreeSHAP attribution data for Alert #${id} (User: **${targetName}** / \`${targetEmpId}\`, Risk Score: **${scoreVal}**).\n\nI can explain feature contributions, baseline deviations, and poisoning resistance. How can I assist your investigation?`,
+              timestamp: new Date().toISOString(),
+              modelName: 'claude-3-5-sonnet'
+            }]);
+          }
         } else {
           // General chat mode — no specific alert selected
-          setSessionToken(`session-general-${Date.now()}`);
-          setMessages([{
-            role: 'assistant',
-            content: `Hello Analyst. I am your UEBA SOC Copilot powered by Claude 3.5 Sonnet, grounded on CERT r5.2 behavioral telemetry.\n\nYou can ask me about:\n- **Risk scoring** and anomaly detection logic\n- **SHAP feature** attributions and model decisions\n- **Baseline governance** and poisoning resistance\n- **SOC containment** recommendations\n\nOr navigate to a specific alert and open it for context-grounded analysis.`,
-            timestamp: new Date().toISOString(),
-            modelName: 'claude-3-5-sonnet'
-          }]);
+          if (!isCancelled) {
+            setSessionToken(`session-general-${Date.now()}`);
+            setMessages([{
+              role: 'assistant',
+              content: `Hello Analyst. I am your UEBA SOC Copilot powered by Claude 3.5 Sonnet, grounded on CERT r5.2 behavioral telemetry.\n\nYou can ask me about:\n- **Risk scoring** and anomaly detection logic\n- **SHAP feature** attributions and model decisions\n- **Baseline governance** and poisoning resistance\n- **SOC containment** recommendations\n\nOr navigate to a specific alert and open it for context-grounded analysis.`,
+              timestamp: new Date().toISOString(),
+              modelName: 'claude-3-5-sonnet'
+            }]);
+          }
         }
       } catch (err) {
         console.error('Failed to initialize AI chat:', err);
-        setMessages([{
-          role: 'assistant',
-          content: `Hello Analyst. I am your UEBA SOC Copilot. The backend is currently offline, but I can still answer general questions about the UEBA system.`,
-          timestamp: new Date().toISOString(),
-          modelName: 'claude-3-5-sonnet (Offline)'
-        }]);
+        if (!isCancelled) {
+          setMessages([{
+            role: 'assistant',
+            content: `Hello Analyst. I am your UEBA SOC Copilot. The backend is currently offline, but I can still answer general questions about the UEBA system.`,
+            timestamp: new Date().toISOString(),
+            modelName: 'claude-3-5-sonnet (Offline)'
+          }]);
+        }
       } finally {
-        setIsLoadingAlert(false);
+        if (!isCancelled) setIsLoadingAlert(false);
       }
     };
 
     initChat();
+    return () => {
+      isCancelled = true;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -251,21 +265,21 @@ Feel free to ask for detailed containment steps, TreeSHAP feature explanations, 
   ];
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4">
+    <div className="min-h-[calc(100vh-6rem)] lg:h-[calc(100vh-6rem)] flex flex-col space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
         <div className="flex items-center space-x-3">
           <Link
             to={alert ? `/users/${targetEmpId}` : '/'}
-            className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-cyan-400 transition-colors"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-cyan-400 transition-colors shrink-0"
             title="Back to User Profile"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-base md:text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Bot className="w-5 h-5 text-violet-400" />
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-sm md:text-base font-bold text-slate-100 flex items-center gap-2 truncate">
+                <Bot className="w-5 h-5 text-violet-400 shrink-0" />
                 Claude SOC Copilot: Alert #{id || 'General'}
               </h1>
               <span className="bg-violet-950/80 text-violet-300 border border-violet-500/40 text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -273,13 +287,13 @@ Feel free to ask for detailed containment steps, TreeSHAP feature explanations, 
                 Evidence Grounded
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono">
+            <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">
               Target User: <strong className="text-cyan-400">{targetName} ({targetEmpId})</strong> | Risk Score: <strong className="text-rose-400">{targetScore}</strong>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 self-end sm:self-auto">
           {id && (
             <Link
               to={`/feedback?alert_id=${id}`}
@@ -292,9 +306,9 @@ Feel free to ask for detailed containment steps, TreeSHAP feature explanations, 
       </div>
 
       {/* Main Container: Chat Thread (Left 8 cols) + Evidence Sidebar (Right 4 cols) */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
         {/* Chat Thread Panel (8 Cols) */}
-        <div className="lg:col-span-8 flex flex-col bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div className="h-[480px] lg:h-auto lg:col-span-8 flex flex-col bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           {/* Scrollable Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((msg, idx) => (

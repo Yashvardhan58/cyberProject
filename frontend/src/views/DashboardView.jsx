@@ -4,7 +4,8 @@ import UserTable from '../components/dashboard/UserTable';
 import AlertFeed from '../components/dashboard/AlertFeed';
 import { usersApi } from '../api/users';
 import { alertsApi } from '../api/alerts';
-import { metricsApi } from '../api/metrics';
+// import { metricsApi } from '../api/metrics'; // [OPTIMIZATION]: Commented out because summaryMetrics is unused here
+import { useApp } from '../context/AppContext';
 import { RefreshCw, ShieldAlert, Sparkles } from 'lucide-react';
 
 /**
@@ -12,19 +13,25 @@ import { RefreshCw, ShieldAlert, Sparkles } from 'lucide-react';
  * Main enterprise SOC landing page for real-time insider threat and account compromise detection.
  */
 export default function DashboardView() {
+  const { refreshTrigger } = useApp() || {};
   const [users, setUsers] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [summaryMetrics, setSummaryMetrics] = useState(null);
+  // [OPTIMIZATION]: summaryMetrics state commented out - KPIs are computed directly from active telemetry
+  // const [summaryMetrics, setSummaryMetrics] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [usersRes, alertsRes, metricsRes] = await Promise.all([
+      // [OPTIMIZATION]: Fetch only required datasets for this screen.
+      // COMMENTED OUT UNUSED CALL:
+      // Previously: metricsApi.getSummaryMetrics() was fetched simultaneously,
+      // creating an extra backend call even though AdminMetricsView is the dedicated metrics page.
+      const [usersRes, alertsRes] = await Promise.all([
         usersApi.getAllUsers().catch(() => ({ data: [] })),
         alertsApi.getAllAlerts().catch(() => ({ data: [] })),
-        metricsApi.getSummaryMetrics().catch(() => ({ data: {} }))
+        // metricsApi.getSummaryMetrics().catch(() => ({ data: {} }))
       ]);
 
       const usersList = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.results || []);
@@ -32,7 +39,7 @@ export default function DashboardView() {
 
       setUsers(usersList);
       setAlerts(alertsList);
-      setSummaryMetrics(metricsRes.data || {});
+      // setSummaryMetrics(metricsRes?.data || {});
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -43,7 +50,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [refreshTrigger]);
 
   // Compute live KPIs
   const criticalCount = alerts.filter(a => (a.risk_score >= 80 || a.severity === 'CRITICAL')).length;

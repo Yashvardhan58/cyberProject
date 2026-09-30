@@ -1,30 +1,47 @@
 import React from 'react';
 import { getScoreColor } from '../../utils/formatters';
 
-const RiskGauge = ({ score = 0, size = 'md', severity = 'LOW' }) => {
+const RiskGauge = ({ score = 0, size = 'lg', severity = null, title = null, subtitle = null }) => {
   const cleanScore = Math.min(Math.max(parseFloat(score) || 0, 0), 100);
   const color = getScoreColor(cleanScore);
 
-  // Semicircle dimensions
-  const strokeWidth = size === 'lg' ? 14 : size === 'sm' ? 8 : 10;
-  const radius = size === 'lg' ? 70 : size === 'sm' ? 40 : 55;
+  // Compute severity automatically if not provided
+  const computedSeverity = severity || (
+    cleanScore >= 80 ? 'CRITICAL' : cleanScore >= 60 ? 'HIGH' : cleanScore >= 30 ? 'MEDIUM' : 'LOW'
+  );
+
+  // Semicircle dimensions: support numeric size or standard presets
+  const numericSize = typeof size === 'number' ? size : size === 'lg' ? 180 : size === 'sm' ? 110 : 140;
+  const radius = Math.round(numericSize * 0.38);
+  const strokeWidth = Math.round(numericSize * 0.08);
   const center = radius + strokeWidth;
   const svgWidth = center * 2;
-  const svgHeight = center + 10;
+  const svgHeight = center + 12;
 
   // Arc calculations (180 degrees semicircle)
   const circumference = Math.PI * radius;
   const strokeDashoffset = circumference - (cleanScore / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex flex-col items-center justify-center p-3">
+      {title && (
+        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+          {title}
+        </span>
+      )}
+      {subtitle && (
+        <span className="text-[10px] text-slate-400 font-mono mb-2">
+          {subtitle}
+        </span>
+      )}
+
       <div className="relative flex items-center justify-center">
         <svg width={svgWidth} height={svgHeight} className="overflow-visible">
-          {/* Background Arc */}
+          {/* Background Arc (dark mode slate track) */}
           <path
             d={`M ${strokeWidth},${center} A ${radius},${radius} 0 0,1 ${svgWidth - strokeWidth},${center}`}
             fill="none"
-            stroke="#E2E8F0"
+            stroke="#1e293b"
             strokeWidth={strokeWidth}
             strokeLinecap="round"
           />
@@ -44,9 +61,7 @@ const RiskGauge = ({ score = 0, size = 'md', severity = 'LOW' }) => {
         {/* Center Score Readout */}
         <div className="absolute bottom-1 flex flex-col items-center">
           <span
-            className={`font-mono font-bold leading-none ${
-              size === 'lg' ? 'text-3xl' : size === 'sm' ? 'text-lg' : 'text-2xl'
-            }`}
+            className="font-mono font-bold leading-none text-3xl"
             style={{ color }}
           >
             {Math.round(cleanScore)}
@@ -58,14 +73,14 @@ const RiskGauge = ({ score = 0, size = 'md', severity = 'LOW' }) => {
       </div>
 
       <div
-        className="mt-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-xs"
+        className="mt-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider border shadow-xs"
         style={{
           backgroundColor: `${color}15`,
           color: color,
           borderColor: `${color}40`,
         }}
       >
-        {severity} Risk
+        {computedSeverity} Risk
       </div>
     </div>
   );

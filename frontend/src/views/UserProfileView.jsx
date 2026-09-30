@@ -33,38 +33,45 @@ export default function UserProfileView() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isCancelled = false;
+
     const fetchUserData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [profRes, alertsRes] = await Promise.all([
-          usersApi.getUserProfile(id).catch(async () => {
-            return usersApi.getUserById(id).catch(() => ({ data: null }));
-          }),
-          alertsApi.getUserAlerts(id).catch(() => ({ data: [] }))
-        ]);
+        // [OPTIMIZATION]: Fetching user profile via /users/{id}/profile/.
+        // COMMENTED OUT REDUNDANT RETRY:
+        // Previously: usersApi.getUserProfile(id).catch(() => usersApi.getUserById(id))
+        // 'getUserById' is an alias of 'getUserProfile'. Calling it on failure resulted in
+        // an immediate duplicate HTTP GET request to the identical endpoint.
+        const profRes = await usersApi.getUserProfile(id).catch(() => ({ data: null }));
+
+        if (isCancelled) return;
 
         let profData = profRes?.data?.data || profRes?.data || profRes;
         if (profData?.results && Array.isArray(profData.results)) {
           profData = profData.results[0];
         }
 
-        let alertsList = [];
-        if (Array.isArray(alertsRes?.data)) {
-          alertsList = alertsRes.data;
-        } else if (Array.isArray(alertsRes?.data?.data)) {
-          alertsList = alertsRes.data.data;
-        } else if (Array.isArray(alertsRes?.data?.results)) {
-          alertsList = alertsRes.data.results;
-        } else if (Array.isArray(alertsRes?.results)) {
-          alertsList = alertsRes.results;
-        }
-
         if (profData && typeof profData === 'object' && (profData.id || profData.employee_id || profData.name)) {
-          // If alertsList is empty from filter, fallback to profData.recent_alerts
-          if (alertsList.length === 0 && Array.isArray(profData.recent_alerts) && profData.recent_alerts.length > 0) {
+          // [OPTIMIZATION]: UserProfileDetailSerializer already bundles recent_alerts, trajectory,
+          // baseline, and shap_breakdown in a single unified payload.
+          // COMMENTED OUT REDUNDANT SECOND API CALL:
+          // Previously: alertsApi.getUserAlerts(id) was fired in parallel with getUserProfile(id),
+          // causing 2 simultaneous API calls on a single user profile page visit.
+          let alertsList = [];
+          if (Array.isArray(profData.recent_alerts) && profData.recent_alerts.length > 0) {
             alertsList = profData.recent_alerts;
+          } else {
+            // Optional fallback only if recent_alerts was not provided in the profile
+            try {
+              const fallbackAlertsRes = await alertsApi.getUserAlerts(id).catch(() => ({ data: [] }));
+              alertsList = Array.isArray(fallbackAlertsRes?.data) ? fallbackAlertsRes.data : (fallbackAlertsRes?.results || []);
+            } catch (e) {
+              alertsList = [];
+            }
           }
+
           setProfile(profData);
           setUserAlerts(alertsList);
         } else {
@@ -81,6 +88,10 @@ export default function UserProfileView() {
     if (id) {
       fetchUserData();
     }
+
+    return () => {
+      isCancelled = true;
+    };
   }, [id]);
 
   if (isLoading) {

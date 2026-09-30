@@ -13,9 +13,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto bg-slate-950/40 p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto bg-slate-950/40 p-3 sm:p-4 md:p-6 transition-all duration-300">
           <Routes>
             <Route path="/" element={<DashboardView />} />
             <Route path="/users/:id" element={<UserProfileView />} />

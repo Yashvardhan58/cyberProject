@@ -63,7 +63,7 @@ export default function FilterBar({
         </div>
 
         {/* Anomaly Toggle + Refresh Button */}
-        <div className="flex items-center space-x-3 self-end md:self-auto">
+        <div className="flex items-center justify-between md:justify-start space-x-3 w-full md:w-auto">
           <button
             onClick={() => onToggleAnomalies(!onlyAnomalies)}
             className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${

@@ -1,7 +1,7 @@
 import apiClient from './client';
 
 export const submitVerdict = async (alertId, verdictData) => {
-  return apiClient.post(`/alerts/${alertId}/verdict/`, verdictData);
+  return apiClient.post(`/verdicts/alerts/${alertId}/verdict/`, verdictData);
 };
 
 export const fetchVerdicts = async (params = {}) => {

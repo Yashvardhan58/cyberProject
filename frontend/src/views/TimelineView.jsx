@@ -5,11 +5,14 @@ import { usersApi } from '../api/users';
 import { alertsApi } from '../api/alerts';
 import { Clock, ShieldAlert, Sparkles, Activity } from 'lucide-react';
 
+import { useApp } from '../context/AppContext';
+
 /**
  * TimelineView Component
  * Chronological multi-channel forensic timeline view for security incident investigations.
  */
 export default function TimelineView() {
+  const { refreshTrigger } = useApp() || {};
   const [users, setUsers] = useState([]);
   const [events, setEvents] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
@@ -98,7 +101,7 @@ export default function TimelineView() {
 
   useEffect(() => {
     fetchTimelineData();
-  }, []);
+  }, [refreshTrigger]);
 
   // Filter events safely without throwing TypeErrors
   const filteredEvents = events.filter((evt) => {

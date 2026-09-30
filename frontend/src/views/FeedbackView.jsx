@@ -8,11 +8,14 @@ import { verdictsApi } from '../api/verdicts';
 import { CheckCircle2, AlertOctagon, ShieldCheck, Clock, FileCheck, Filter } from 'lucide-react';
 import { getRiskBadgeClass, formatDate } from '../utils/formatters';
 
+import { useApp } from '../context/AppContext';
+
 /**
  * FeedbackView Component
  * SOC Analyst adjudication dashboard for submitting TP/FP verdicts, quarantining baselines, and inspecting verdict logs.
  */
 export default function FeedbackView() {
+  const { refreshTrigger } = useApp() || {};
   const [searchParams] = useSearchParams();
   const queryAlertId = searchParams.get('alert_id');
 
@@ -22,27 +25,41 @@ export default function FeedbackView() {
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchFeedbackData = async () => {
+  // [OPTIMIZATION]: Allow selective refresh (refreshUsers = false on verdict submission)
+  // to avoid redundant user fleet fetch when only alert verdict state changed.
+  const fetchFeedbackData = async (refreshUsers = true) => {
     setIsLoading(true);
     try {
-      const [alertsRes, usersRes, verdictsRes] = await Promise.all([
+      const promises = [
         alertsApi.getAllAlerts().catch(() => ({ data: [] })),
-        usersApi.getAllUsers().catch(() => ({ data: [] })),
         verdictsApi.getVerdicts().catch(() => ({ data: [] }))
-      ]);
+      ];
+
+      if (refreshUsers || users.length === 0) {
+        promises.push(usersApi.getAllUsers().catch(() => ({ data: [] })));
+      }
+
+      const results = await Promise.all(promises);
+      const alertsRes = results[0];
+      const verdictsRes = results[1];
+      const usersRes = results[2];
 
       const fetchedAlerts = Array.isArray(alertsRes.data) ? alertsRes.data : (alertsRes.results || []);
-      const fetchedUsers = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.results || []);
       const fetchedVerdicts = Array.isArray(verdictsRes.data) ? verdictsRes.data : (verdictsRes.results || []);
 
       setAlerts(fetchedAlerts);
-      setUsers(fetchedUsers);
       setPastVerdicts(fetchedVerdicts);
+
+      if (usersRes) {
+        const fetchedUsers = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.results || []);
+        setUsers(fetchedUsers);
+      }
 
       if (queryAlertId) {
         const found = fetchedAlerts.find(a => String(a.id || a.alert_id) === String(queryAlertId));
         if (found) setSelectedAlert(found);
-      } else if (fetchedAlerts.length > 0) {
+        else if (fetchedAlerts.length > 0 && !selectedAlert) setSelectedAlert(fetchedAlerts[0]);
+      } else if (fetchedAlerts.length > 0 && !selectedAlert) {
         setSelectedAlert(fetchedAlerts[0]);
       }
     } catch (err) {
@@ -53,8 +70,8 @@ export default function FeedbackView() {
   };
 
   useEffect(() => {
-    fetchFeedbackData();
-  }, [queryAlertId]);
+    fetchFeedbackData(true);
+  }, [queryAlertId, refreshTrigger]);
 
   return (
     <div className="space-y-6">
@@ -158,7 +175,7 @@ export default function FeedbackView() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[520px]">
               <thead className="bg-slate-950/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
                 <tr>
                   <th className="py-2.5 px-3">Alert ID</th>
