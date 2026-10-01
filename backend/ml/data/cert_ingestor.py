@@ -172,3 +172,26 @@ class CertIngestor:
 
         df = pd.read_csv(file_path, dtype={"user_id": str})
         return df
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    backend_root = Path(__file__).resolve().parent.parent.parent
+    if str(backend_root) not in sys.path:
+        sys.path.insert(0, str(backend_root))
+
+    from ml.data.feature_engineer import run_batch_feature_pipeline
+
+    parser = argparse.ArgumentParser(description="CERT r5.2 Ingestion & Feature Engineering")
+    parser.add_argument("--raw-dir", type=str, default="./ml/data/raw", help="Path to raw CERT CSV directory")
+    parser.add_argument("--out-dir", type=str, default="./ml/data/processed", help="Path to processed output directory")
+    parser.add_argument("--limit", type=int, default=None, help="Optional row limit for fast testing")
+    args = parser.parse_args()
+
+    target_raw = backend_root / args.raw_dir if not Path(args.raw_dir).is_absolute() else Path(args.raw_dir)
+    target_out = backend_root / args.out_dir if not Path(args.out_dir).is_absolute() else Path(args.out_dir)
+
+    run_batch_feature_pipeline(target_raw, target_out, sample_limit=args.limit)
+

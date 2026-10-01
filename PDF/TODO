@@ -1,0 +1,5 @@
+Component	Current Approach	Better / Alternative Academic Approach
+Peer Distance	Euclidean distance from mean centroid	Mahalanobis Distance: Accounts for feature covariances (e.g., logon frequency and session length are correlated).
+Drift Monitoring	Simple difference $\Delta d_i$ with linear gain	BOCPD (Bayesian Online Changepoint Detection) or CUSUM (Cumulative Sum Control Chart): Statistically rigorous changepoint detection algorithms used in econometrics.
+Suspicion Threshold	Static $\tau = 0.60$	Dynamic / Contextual Threshold $\tau(t)$: Automatically tightens (e.g., drops to $0.50$) if company threat alert level is elevated or during high-risk termination notice periods.
+Peer Clustering	Role + Department string matching	Unsupervised Graph Neural Networks (GNN) or HDBSCAN: Automatically discovers hidden informal peer collaboration clusters rather than relying solely on official HR org charts.
