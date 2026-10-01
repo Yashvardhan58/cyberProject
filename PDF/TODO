@@ -3,3 +3,57 @@ Peer Distance	Euclidean distance from mean centroid	Mahalanobis Distance: Accoun
 Drift Monitoring	Simple difference $\Delta d_i$ with linear gain	BOCPD (Bayesian Online Changepoint Detection) or CUSUM (Cumulative Sum Control Chart): Statistically rigorous changepoint detection algorithms used in econometrics.
 Suspicion Threshold	Static $\tau = 0.60$	Dynamic / Contextual Threshold $\tau(t)$: Automatically tightens (e.g., drops to $0.50$) if company threat alert level is elevated or during high-risk termination notice periods.
 Peer Clustering	Role + Department string matching	Unsupervised Graph Neural Networks (GNN) or HDBSCAN: Automatically discovers hidden informal peer collaboration clusters rather than relying solely on official HR org charts.
+
+
+1. Configuration & Credentials (Immediate Requirements)
+Anthropic Claude API Key (ANTHROPIC_API_KEY):
+You need to provide a real Claude API key in backend/.env.
+(Currently, backend/.env does not exist—only .env.example exists. In the absence of an API key, the system uses a built-in deterministic fallback engine).
+Environment File (backend/.env):
+Create backend/.env from 
+
+.env.example
+ to hold your ANTHROPIC_API_KEY, secret keys, and local Redis URLs.
+2. Dataset & ML Training (To Produce Real Outputs vs Synthetic Demo Data)
+Currently, the codebase uses 120 synthetic sample vectors and pre-seeded SQLite data to run the dashboard. To produce the true academic output from the real benchmark:
+
+CMU CERT r5.2 Raw Dataset Files:
+The folder 
+
+backend/ml/data/raw/
+ currently has no data files.
+To train on real data, the 6 CERT CSV files must be placed there:
+logon.csv
+device.csv
+email.csv
+file.csv
+http.csv
+psychometric.csv
+Real Trained Model Binaries (.joblib files):
+
+
+backend/ml/models/saved/
+ currently contains only training_summary.json.
+The actual serialized model weights (xgboost_model.joblib, svm_model.joblib, isolation_forest.joblib) need to be saved by running the training pipeline.
+Full Feature Matrix Generation:
+Processing the raw CERT files through 
+
+feature_engineer.py
+ to generate the full multi-thousand record train/test CSVs.
+3. Background Services (For Live Execution)
+Redis Server Instance:
+Needed to handle asynchronous Celery task queues (running locally via WSL or Docker on port 6379).
+Celery Background Workers:
+LLM Worker (-Q llm): Needed if you want asynchronous background Claude API generation rather than synchronous calls.
+Governance Worker (-Q governance): Needed to run scheduled 4-stage drift audit tasks.
+4. Steps Remaining to Produce the Final Correct Output
+Step	Action Item	Purpose
+Step 1	Create backend/.env & add ANTHROPIC_API_KEY	Enables live Claude 3.5 Sonnet incident explanations and interactive Q&A.
+Step 2	Add CERT r5.2 CSV files to backend/ml/data/raw/ (Optional if using synthetic demo data)	Feeds real insider threat logs into the ingestor.
+Step 3	Run Feature Extraction & Model Training	Trains the SVM, XGBoost+SMOTE, and Isolation Forest models and saves .joblib files.
+Step 4	Run Research Experiments E1 to E5	Generates real benchmark comparison tables, AUC/F1 scores, and baseline poisoning simulation results for your M.Tech dissertation/paper.
+Step 5	Launch Application Servers	Run Redis + Django Backend + React Frontend (or double-click 
+
+START_APPLICATION.bat
+) to view the live SOC dashboard.
+5:28 PM
