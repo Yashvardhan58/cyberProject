@@ -79,7 +79,7 @@ class ExplanationListCreateAPIView(APIView):
             # and > 10 minutes have elapsed, mark it as stale so it can re-enqueue.
             is_stale = False
             if explanation.status in ["PENDING", "PROCESSING"] and not created:
-                if explanation.created_at < timezone.now() - timedelta(minutes=10):
+                if explanation.created_at < timezone.now() - timedelta(minutes=3):
                     is_stale = True
 
             # -----------------------------------------------------------------
@@ -230,7 +230,42 @@ class ChatSessionDetailAPIView(APIView):
 
         evidence = EvidenceBuilder.build_alert_evidence(session.alert)
         history = list(session.messages.values("role", "content"))
+        user_context = {"name": session.analyst_name}
 
+        # ---------------------------------------------------------------------
+        # CHAT GUARDRAILS POLICY EVALUATION (ZERO-TOKEN EARLY RETURN)
+        # ---------------------------------------------------------------------
+        from .chat_guardrails import evaluate_chat_guardrails, ResponseCategory
+        decision = evaluate_chat_guardrails(
+            message=user_text,
+            user_context=user_context,
+            alert_context=evidence,
+            conversation_history=history,
+        )
+
+        if not decision.should_invoke_llm:
+            # Deterministic, out-of-scope, or in-context cached response (0 API calls, 0 tokens)
+            assistant_msg = ChatMessage.objects.create(
+                session=session,
+                role="assistant",
+                content=decision.response_text,
+                evidence_grounded=decision.evidence_grounded,
+            )
+            return Response(
+                {
+                    "status": "success",
+                    "data": {
+                        "content": assistant_msg.content,
+                        "role": assistant_msg.role,
+                        "created_at": assistant_msg.created_at,
+                        "model": "deterministic-guardrail-policy",
+                        "guardrail_category": decision.category.value,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        # Deep investigation: invoke multi-provider resilient LLM client
         from .llm_client import ClaudeExplanationClient
         client = ClaudeExplanationClient()
         ai_reply = client.answer_analyst_question(evidence, history, user_text)
@@ -249,7 +284,7 @@ class ChatSessionDetailAPIView(APIView):
                     "content": assistant_msg.content,
                     "role": assistant_msg.role,
                     "created_at": assistant_msg.created_at,
-                    "model": "claude-3-5-sonnet",
+                    "model": "multi-provider-soc-assistant",
                 },
             },
             status=status.HTTP_200_OK,

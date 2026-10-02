@@ -104,7 +104,12 @@ def generate_alert_explanation_task(self, explanation_id: int):
         # Check if Retries are Exhausted
         # ---------------------------------------------------------------------
         current_retries = getattr(self.request, "retries", 0)
-        if current_retries >= self.max_retries:
+        local_obj = getattr(getattr(self, "request_stack", None), "_local", None)
+        raw_stack = getattr(local_obj, "stack", None)
+        if isinstance(raw_stack, list) and raw_stack:
+            current_retries = max([current_retries] + [getattr(r, "retries", 0) for r in raw_stack])
+
+        if current_retries >= self.max_retries or explanation.attempts > self.max_retries:
             logger.error(
                 f"[Celery] Retries exhausted for Explanation #{explanation.id}: {err_msg}"
             )

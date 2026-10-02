@@ -54,3 +54,7 @@ Phases.md
 Rules.md
 START_APPLICATION.bat
 
+.env*
+*.env
+.env.example
+*.env.production
