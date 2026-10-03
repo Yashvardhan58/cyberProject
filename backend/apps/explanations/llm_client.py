@@ -67,7 +67,7 @@ def _call_google_gemini(
     system_prompt: str,
     user_msg: str,
     api_key: str,
-    model: str = "gemini-3.8-flash",
+    model: str = "gemini-1.5-flash",
     max_tokens: int = 500,
 ) -> Dict[str, Any]:
     """Call Google AI Studio (Gemini) REST API."""
@@ -91,7 +91,7 @@ def _call_google_gemini(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=8.0) as resp:
+    with urllib.request.urlopen(req, timeout=4.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
         text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
         return {
@@ -105,7 +105,7 @@ def _call_groq(
     system_prompt: str,
     user_msg: str,
     api_key: str,
-    model: str = "llama-3.3-70b-versatile",
+    model: str = "llama-3.1-8b-instant",
     max_tokens: int = 400,
 ) -> Dict[str, Any]:
     """Call GroqCloud OpenAI-compatible REST API."""
@@ -130,7 +130,7 @@ def _call_groq(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=6.0) as resp:
+    with urllib.request.urlopen(req, timeout=4.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
         text = result["choices"][0]["message"]["content"].strip()
         return {
@@ -144,7 +144,7 @@ def _call_openrouter(
     system_prompt: str,
     user_msg: str,
     api_key: str,
-    model: str = "qwen/qwen3.8-27b:free",
+    model: str = "google/gemini-2.0-flash-exp:free",
     max_tokens: int = 500,
 ) -> Dict[str, Any]:
     """Call OpenRouter REST API."""
@@ -170,14 +170,18 @@ def _call_openrouter(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=8.0) as resp:
+    with urllib.request.urlopen(req, timeout=4.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
-        text = result["choices"][0]["message"]["content"].strip()
-        return {
-            "text": text,
-            "faithfulness_score": 0.95,
-            "model_name": f"openrouter-{model}",
-        }
+        choices = result.get("choices", [])
+        if choices and len(choices) > 0:
+            content = choices[0].get("message", {}).get("content")
+            if content:
+                return {
+                    "text": content.strip(),
+                    "faithfulness_score": 0.95,
+                    "model_name": f"openrouter-{model}",
+                }
+        raise ValueError(f"OpenRouter empty choices or rate limited: {result}")
 
 
 def _call_deterministic_fallback(evidence_payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -364,7 +368,18 @@ class ClaudeExplanationClient:
                 f"The volume and timing exhibited a sharp, sustained deviation from {emp.get('department', 'department')} peer baselines."
             )
 
-        # Intent B: Deep dive / In-depth detailed technical explanation
+        # Intent B: Action, containment, stopping threat, precautions, & triage protocol
+        if any(k in q_lower for k in ["stop", "how to stop", "precaution", "precautions", "contain", "containment", "prevent", "remediation", "action", "recommend", "next steps", "what should", "mitigate"]):
+            return (
+                f"Recommended SOC Incident Response & Containment Protocol for {user_name} ({emp.get('employee_id', 'N/A')}):\n\n"
+                f"1) Identity & Session Revocation: Invalidate active Active Directory, VPN, and SSO sessions immediately.\n"
+                f"2) Endpoint Network Isolation: Quarantine workstation via EDR agent to prevent lateral movement or data exfiltration.\n"
+                f"3) Removable Media & Storage Lockdown: Revoke USB peripheral write privileges across corporate endpoints.\n"
+                f"4) Threat Hunting & Forensics: Cross-reference proxy and DNS query logs for anomalous destination domains and IP addresses.\n"
+                f"5) Baseline Governance: Confirm Baseline Quarantine status to prevent compromised telemetry from poisoning historical baselines."
+            )
+
+        # Intent C: Deep dive / In-depth detailed technical explanation
         if any(k in q_lower for k in ["deep", "detail", "detailed", "breakdown", "comprehensive", "full analysis", "in depth"]):
             lines = []
             for i, f in enumerate(top_feats, 1):
@@ -390,39 +405,31 @@ class ClaudeExplanationClient:
                 f"Assessment: High-confidence behavioral divergence from established {emp.get('department', 'department')} baseline requiring SOC verification."
             )
 
-        # Intent C: Timeline, timestamp, and schedule inquiries
+        # Intent D: Timeline, timestamp, and schedule inquiries
         if any(k in q_lower for k in ["when", "time", "date", "timeline", "timestamp", "hour"]):
-            ts = evidence_payload.get("timestamp", "Recent incident window")
+            ts = evidence_payload.get("date") or evidence_payload.get("timestamp", "Recent incident window")
             return (
                 f"Incident Timeline & Active Windows for {user_name}:\n"
-                f"• Primary Incident Timestamp: {ts}\n"
+                f"• Primary Incident Date: {ts}\n"
                 f"• Operational Window: Anomalous activity concentrated during off-hours (01:00 AM – 04:00 AM).\n"
                 f"• Trend History: {trend.get('summary', 'Escalation observed across consecutive baseline checks.')}"
-            )
-
-        # Intent D: Next steps & triage protocol
-        if any(k in q_lower for k in ["recommend", "next", "action", "do next", "what should"]):
-            return (
-                f"Recommended SOC Triage Protocol for {user_name}:\n"
-                f"1) Authorization Verification: Confirm whether off-hours removable media transfers were covered by an approved ticket.\n"
-                f"2) Telemetry Correlation: Cross-reference firewall, proxy, and DNS query logs for anomalous outbound destination IPs.\n"
-                f"3) Account Governance: Temporarily quarantine removable media permissions pending analyst review.\n"
-                f"4) Verdict Submission: Record a True Positive (TP) verdict in the Verdicts tab to update rolling model baselines."
             )
 
         # Intent E: Root cause / Why / Trigger
         if any(k in q_lower for k in ["why", "cause", "trigger"]):
             f0 = top_feats[0] if top_feats else {"feature": "file_copy_to_usb_bytes", "shap_impact": 0.42}
+            ts = evidence_payload.get("date") or evidence_payload.get("timestamp", "the observation window")
             return (
-                f"{user_name} exhibited an elevated risk score of {score_val} [{tier_val}], primarily triggered by an abnormal surge in "
+                f"{user_name} was flagged on {ts} with an elevated risk score of {score_val} [{tier_val}], primarily triggered by an abnormal surge in "
                 f"'{f0['feature'].replace('_', ' ')}' (TreeSHAP impact: +{f0.get('shap_impact', '0.42')}). "
                 f"This represented a high-confidence outlier deviating from established {emp.get('department', 'department')} peer baselines."
             )
 
         # Default: General evidence-grounded response
         f0 = top_feats[0] if top_feats else {"feature": "anomalous behavioral telemetry", "shap_impact": 0.40}
+        ts = evidence_payload.get("date") or evidence_payload.get("timestamp", "recent monitoring")
         return (
-            f"Based on CERT r5.2 behavioral telemetry, {user_name} is currently flagged with a composite risk score of "
+            f"Based on CERT r5.2 behavioral telemetry, {user_name} was flagged on {ts} with a composite risk score of "
             f"{score_val} [{tier_val}]. The primary indicator is '{f0['feature'].replace('_', ' ')}' "
             f"(TreeSHAP impact: +{f0.get('shap_impact', '0.40')}). "
             f"You can ask for a 'detailed breakdown', 'activity counts', 'timeline', or 'next steps'."

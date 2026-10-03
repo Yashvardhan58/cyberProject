@@ -16,22 +16,17 @@ export default function DashboardView() {
   const { refreshTrigger } = useApp() || {};
   const [users, setUsers] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  // [OPTIMIZATION]: summaryMetrics state commented out - KPIs are computed directly from active telemetry
-  // const [summaryMetrics, setSummaryMetrics] = useState(null);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [totalAlerts, setTotalAlerts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // [OPTIMIZATION]: Fetch only required datasets for this screen.
-      // COMMENTED OUT UNUSED CALL:
-      // Previously: metricsApi.getSummaryMetrics() was fetched simultaneously,
-      // creating an extra backend call even though AdminMetricsView is the dedicated metrics page.
       const [usersRes, alertsRes] = await Promise.all([
-        usersApi.getAllUsers().catch(() => ({ data: [] })),
-        alertsApi.getAllAlerts().catch(() => ({ data: [] })),
-        // metricsApi.getSummaryMetrics().catch(() => ({ data: {} }))
+        usersApi.getAllUsers({ page_size: 50 }).catch(() => ({ data: [] })),
+        alertsApi.getAllAlerts({ page_size: 50 }).catch(() => ({ data: [] })),
       ]);
 
       const usersList = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.results || []);
@@ -39,7 +34,8 @@ export default function DashboardView() {
 
       setUsers(usersList);
       setAlerts(alertsList);
-      // setSummaryMetrics(metricsRes?.data || {});
+      setTotalUsers(usersRes.count || usersList.length);
+      setTotalAlerts(alertsRes.count || alertsList.length);
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -95,9 +91,9 @@ export default function DashboardView() {
 
       {/* Fleet KPI Stat Cards */}
       <StatCards
-        totalAlerts={alerts.length}
+        totalAlerts={totalAlerts || alerts.length}
         criticalAlerts={criticalCount}
-        monitoredUsers={users.length}
+        monitoredUsers={totalUsers || users.length}
         quarantinedBaselines={quarantinedCount}
         avgFleetRisk={avgRisk}
       />
@@ -105,7 +101,7 @@ export default function DashboardView() {
       {/* Main Grid: User Leaderboard + Live Threat Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7">
-          <UserTable users={users} isLoading={isLoading} />
+          <UserTable users={users} totalCount={totalUsers} isLoading={isLoading} />
         </div>
         <div className="lg:col-span-5">
           <AlertFeed alerts={alerts} isLoading={isLoading} />

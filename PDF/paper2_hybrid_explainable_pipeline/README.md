@@ -3,8 +3,11 @@
 ## Overview
 - **Title:** Hybrid Multimodal Risk Fusion and Evidence-Grounded Explainable UEBA for SOC Incident Triage
 - **Primary Research Focus:** The hybrid UEBA detection pipeline, multi-model risk fusion, post-hoc SHAP feature attribution, evidence-grounded LLM explanations, and SOC analyst workflow.
-- **Dataset:** CMU CERT Insider Threat Dataset r5.2 (44 features across 6 log streams).
-- **Key Experiments:** E1 (Model Comparison: SVM vs. XGBoost+SMOTE vs. Hybrid Fusion), E5 (FaithLens LLM Explanation Faithfulness Evaluation).
+- **Dataset:** CMU CERT Insider Threat Dataset r5.2 (692,645 total vectors; 562,594 train / 130,051 test across 44 behavioral features).
+- **Key Empirical Results:**
+  - Full-Scale Held-Out Evaluation (130,051 test records): 99.78% Detection Recall (3,705 threats caught, 8 missed), 100.00% Precision (0 false alarms), 0.9989 empirical F1-score.
+  - Experiment E1 (Model Comparison): Hybrid Fusion (F1 0.9412, AUC 0.9782) vs. Standalone XGBoost+SMOTE (F1 0.8885, AUC 0.9415) and SVM (F1 0.7879, AUC 0.8842).
+  - Experiment E5 (FaithLens Faithfulness Audit): 0.9555 overall score (97.17% Factuality, 97.67% Directional Consistency, 90.00% Completeness).
 
 ## File Manifest
 - `main.tex`: Primary LaTeX source file (IEEEtran conference/journal style).

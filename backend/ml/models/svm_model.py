@@ -31,6 +31,7 @@ class SVMThreatClassifier:
         self,
         X_train: Any,
         y_train: Any,
+        max_samples: Optional[int] = 50000,
     ) -> Dict[str, Union[float, int, str]]:
         """Train SVM classifier with standard scaling."""
         try:
@@ -42,8 +43,30 @@ class SVMThreatClassifier:
             X_arr = np.array(X_train)
             y_arr = np.array(y_train)
 
+            # Sub-sample for SVM baseline if dataset is large (O(N^2) RBF kernel efficiency)
+            if max_samples and len(X_arr) > max_samples:
+                print(f"  [*] Sub-sampling SVM baseline to {max_samples:,} samples for O(N^2) RBF efficiency...")
+                rng = np.random.RandomState(self.random_state)
+                pos_idx = np.where(y_arr == 1)[0]
+                neg_idx = np.where(y_arr == 0)[0]
+
+                # Preserve all rare positive insider threat instances and fill remainder with negative samples
+                if len(pos_idx) > 0 and len(pos_idx) < max_samples:
+                    n_neg = max_samples - len(pos_idx)
+                    sampled_neg_idx = rng.choice(neg_idx, size=min(n_neg, len(neg_idx)), replace=False)
+                    indices = np.concatenate([pos_idx, sampled_neg_idx])
+                    rng.shuffle(indices)
+                else:
+                    indices = rng.choice(len(X_arr), size=max_samples, replace=False)
+
+                X_fit = X_arr[indices]
+                y_fit = y_arr[indices]
+            else:
+                X_fit = X_arr
+                y_fit = y_arr
+
             self.scaler = StandardScaler()
-            X_scaled = self.scaler.fit_transform(X_arr)
+            X_scaled = self.scaler.fit_transform(X_fit)
 
             self.model = SVC(
                 C=self.C,
@@ -53,12 +76,12 @@ class SVMThreatClassifier:
                 class_weight="balanced",
                 random_state=self.random_state,
             )
-            self.model.fit(X_scaled, y_arr)
+            self.model.fit(X_scaled, y_fit)
             self.is_trained = True
 
             return {
-                "samples": len(X_arr),
-                "positive_samples": int(np.sum(y_arr)),
+                "samples": len(X_fit),
+                "positive_samples": int(np.sum(y_fit)),
                 "support_vectors": len(self.model.support_),
             }
         except ImportError:

@@ -20,6 +20,8 @@ staticfiles/
 # Large Datasets & Raw Logs (DO NOT COMMIT)
 backend/ml/data/raw/*
 !backend/ml/data/raw/.gitkeep
+backend/ml/data/processed/*.csv
+backend/ml/data/processed/.checkpoints/
 backend/ml/data/processed/full_*
 
 # ML Model Binaries (Save to artifact storage)

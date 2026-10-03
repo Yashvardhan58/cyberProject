@@ -3,11 +3,18 @@ API Views for User Leaderboard and Profiles.
 """
 
 from rest_framework import generics, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .models import UserProfile
 from .serializers import UserProfileSerializer, UserProfileDetailSerializer
+
+
+class UserPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
 
 
 class UserListAPIView(generics.ListAPIView):
@@ -17,6 +24,7 @@ class UserListAPIView(generics.ListAPIView):
     Supports ?department=, ?severity=, and ?search= filters.
     """
     serializer_class = UserProfileSerializer
+    pagination_class = UserPagination
 
     def get_queryset(self):
         queryset = UserProfile.objects.all().order_by("-current_risk_score", "name")

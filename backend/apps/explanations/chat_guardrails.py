@@ -336,36 +336,41 @@ def _check_in_context_shortcut(
         emp_id = emp.get("employee_id", "N/A")
         return f"Employee context: {name} ({emp_id}) works as a {role} in the {dept} department."
 
-    # Check 5: Next action / recommendation query
-    if any(p in norm for p in ["what should i do next", "recommended action", "next steps"]):
+    # Check 5: Next action / containment / recommendation query
+    if any(p in norm for p in ["what should i do", "recommended action", "next steps", "how to stop", "stop him", "precautions", "precaution", "contain", "mitigate", "remediation"]):
         name = emp.get("name", "the user")
+        emp_id = emp.get("employee_id", "N/A")
         return (
-            f"Recommended SOC Triage Actions for {name}: "
-            f"1) Verify after-hours access authorization. "
-            f"2) Cross-reference destination IP addresses in proxy/firewall telemetry. "
-            f"3) Escalate to Incident Response if data movement was unsanctioned."
+            f"Recommended SOC Incident Response & Containment Protocol for {name} ({emp_id}):\n"
+            f"1) Credential & Session Revocation: Invalidate active Active Directory, VPN, and SSO sessions immediately.\n"
+            f"2) Endpoint Network Isolation: Quarantine workstation via EDR agent to prevent lateral movement or data exfiltration.\n"
+            f"3) Storage & Removable Media Lockdown: Revoke USB peripheral write privileges across corporate endpoints.\n"
+            f"4) Telemetry & Threat Hunting: Cross-reference proxy and DNS query logs for anomalous destination domains and IP addresses.\n"
+            f"5) Baseline Governance: Confirm Baseline Quarantine status to prevent compromised telemetry from poisoning historical baselines."
         )
 
     # Check 6: "Explain how" / "How was this detected"
-    if any(p in norm for p in ["explain how", "how was this", "how did this", "how is this", "explain why", "tell me how"]):
+    if any(p in norm for p in ["explain how", "how was this", "how did this", "how is this", "explain why", "tell me how", "why is", "why was"]):
         name = emp.get("name", "The employee")
         score = risk.get("composite_risk_score", "N/A")
         tier = risk.get("severity_tier", "HIGH")
+        raw_ts = alert_context.get("date") or alert_context.get("timestamp", "Recent observation window")
+        clean_date = str(raw_ts).split(" ")[0] if (" " in str(raw_ts) and ":" in str(raw_ts)) else str(raw_ts)
         f0 = top_feats[0] if top_feats else {"feature": "logon_count_after_hours", "shap_impact": 0.42}
         return (
-            f"{name} was flagged with an elevated composite risk score of {score} [{tier}]. "
+            f"{name} was flagged on {clean_date} with an elevated composite risk score of {score} [{tier}]. "
             f"The anomaly was detected primarily due to an extreme divergence in '{f0['feature'].replace('_', ' ')}' "
             f"(TreeSHAP impact: +{f0.get('shap_impact', '0.42')}), exceeding baseline activity. "
             f"The XGBoost model and Isolation Forest detector flagged this as a high-confidence outlier requiring SOC verification."
         )
 
-    # Check 7: "When did this happen" / Timeline
-    if any(p in norm for p in ["when did", "what time", "when was", "timestamp", "timeline"]):
-        ts = alert_context.get("timestamp", "Recent observation period")
+    # Check 7: "When did this happen" / Timeline / Date
+    if any(p in norm for p in ["when did", "what time", "when was", "timestamp", "timeline", "date", "what date", "which date", "when"]):
+        raw_ts = alert_context.get("date") or alert_context.get("timestamp", "Recent observation period")
         trend = alert_context.get("seven_day_trend", {})
         aid = alert_context.get("alert_id", "N/A")
         return (
-            f"Alert #{aid} incident event was logged at {ts}. "
+            f"Alert #{aid} incident event was recorded on {raw_ts}. "
             f"Anomalous telemetry was concentrated during off-hours (01:00 AM – 04:00 AM). "
             f"Longitudinal analysis indicates: {trend.get('summary', 'persistent escalation over recent monitoring checks')}."
         )

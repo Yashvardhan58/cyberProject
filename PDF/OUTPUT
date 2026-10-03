@@ -5399,3 +5399,85 @@ Overall Faithfulness Score:       0.9555 (Target: >= 0.85)
 Target Satisfied:                 YES [PASSED]
 
 (venv) PS D:\Chetan Sir\cyberProject\backend>
+
+
+PS D:\Chetan Sir\cyberProject\backend> .\venv\Scripts\activate
+(venv) PS D:\Chetan Sir\cyberProject\backend> python ml/models/train_all.py
+=================================================================
+STARTING ADAPTIVE UEBA MODEL TRAINING PIPELINE
+=================================================================
+Data Loaded: 562594 train samples, 130051 test samples, 44 features.
+
+[1/4] Training SVM Baseline Classifier...
+  [*] Sub-sampling SVM baseline to 50,000 samples for O(N^2) RBF efficiency...
+D:\Chetan Sir\cyberProject\backend\venv\Lib\site-packages\sklearn\svm\_base.py:236: FutureWarning: The `probability` parameter was deprecated in 1.9 and will be removed in version 1.11. Use `CalibratedClassifierCV(SVC(), ensemble=False)` instead of `SVC(probability=True)`
+  warnings.warn(
+  SVM trained successfully on 50,000 samples (2072 support vectors).
+
+[2/4] Training XGBoost Classifier with SMOTE...
+D:\Chetan Sir\cyberProject\backend\venv\Lib\site-packages\xgboost\training.py:200: UserWarning: [17:41:08] WARNING: C:\actions-runner\_work\xgboost\xgboost\src\learner.cc:794:
+Parameters: { "use_label_encoder" } are not used.
+
+  bst.update(dtrain, iteration=i, fobj=obj)
+  XGBoost trained successfully.
+
+[3/4] Training Isolation Forest Anomaly Scorer...
+  Isolation Forest trained successfully.
+
+[4/4] Fitting Baseline Engine & Peer Centroids...
+  Baseline Engine fitted.
+
+==========================================================================================
+                EVALUATED TEST USERS & RISK RANKING TABLE (TOP 30)
+==========================================================================================
+Rank  | User ID      | Role                 | Score   | Severity  | Is Insider?  | Verdict
+------------------------------------------------------------------------------------------
+1     | EMR0269      | Software Engineer    | 76.5    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+2     | DBS0048      | Software Engineer    | 76.5    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+3     | EMR0269      | Software Engineer    | 76.3    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+4     | MYB0686      | Software Engineer    | 76.2    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+5     | HLH0682      | Software Engineer    | 75.9    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+6     | EMR0269      | Software Engineer    | 75.8    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+7     | TAW0689      | Software Engineer    | 75.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+8     | TAW0689      | Software Engineer    | 75.3    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+9     | SSS1129      | Software Engineer    | 75.3    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+10    | EMR0269      | Software Engineer    | 75.1    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+11    | HLH0682      | Software Engineer    | 74.8    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+12    | HLH0682      | Software Engineer    | 74.8    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+13    | PTD0273      | Software Engineer    | 74.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+14    | AHN0681      | Software Engineer    | 73.9    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+15    | HLH0682      | Software Engineer    | 73.9    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+16    | AML0268      | Software Engineer    | 73.7    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+17    | PTD0273      | Software Engineer    | 73.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+18    | DBS0048      | Software Engineer    | 73.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+19    | NRH1383      | Software Engineer    | 73.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+20    | HLH0682      | Software Engineer    | 73.6    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+21    | SKV0041      | Software Engineer    | 73.5    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+22    | EMR0269      | Software Engineer    | 73.3    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+23    | SSN1130      | Software Engineer    | 73.2    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+24    | SKV0041      | Software Engineer    | 73.1    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+25    | PTD0273      | Software Engineer    | 73.0    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+26    | EMR0269      | Software Engineer    | 73.0    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+27    | SSS1129      | Software Engineer    | 73.0    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+28    | JUW1135      | Software Engineer    | 72.9    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+29    | EMR0269      | Software Engineer    | 72.8    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+30    | EMR0269      | Software Engineer    | 72.8    | HIGH      | YES (Threat) | [+] TRUE POSITIVE (Caught)
+... [130021 additional test records evaluated and saved to disk]
+------------------------------------------------------------------------------------------
+
+=================================================================
+ALL MODELS TRAINED & SAVED SUCCESSFULLY TO:
+  D:\Chetan Sir\cyberProject\backend\ml\models\saved
+  Mean Risk Score: 32.85
+  Severities: {'CRITICAL': 0, 'HIGH': 3712, 'MEDIUM': 126262, 'LOW': 77}
+
+RESEARCH PAPER EMPIRICAL METRICS:
+  • True Positives (Threats Caught): 3705
+  • False Alarms (False Positives): 0
+  • Missed Threats (False Negatives): 8
+  • True Negatives (Normal Activity): 126338
+  • Detection Recall: 99.78%
+  • Detection Precision: 100.00%
+  • Empirical F1-Score: 0.9989
+=================================================================
+(venv) PS D:\Chetan Sir\cyberProject\backend>

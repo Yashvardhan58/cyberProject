@@ -256,7 +256,7 @@ In large-scale enterprise deployments, executing four-stage governance checks (c
 \subsection{Dataset and Environmental Setup}
 \label{subsec:dataset}
 The system was evaluated using the Carnegie Mellon University CERT Insider Threat Dataset r5.2~\cite{glasser2013cert}. The raw CERT release spans multi-gigabyte audit logs across six modalities: \texttt{logon.csv}, \texttt{device.csv}, \texttt{email.csv}, \texttt{file.csv}, \texttt{http.csv}, and \texttt{psychometric.csv}.
-Following rigorous temporal integrity standards, a strict chronological train/test split (80\% initial chronological period for baseline establishment, 20\% held-out period for evaluation) was enforced using \texttt{splitter.py} to ensure zero forward-looking temporal leakage.
+Following rigorous temporal integrity standards, the raw event streams were extracted into 692,645 continuous daily feature vectors. A strict chronological train/test split (80\% initial chronological period comprising 562,594 records for baseline establishment and peer centroid fitting, 20\% held-out period comprising 130,051 records for evaluation) was enforced using \texttt{splitter.py} to ensure zero forward-looking temporal leakage.
 
 \subsection{Experiment E2: Slow-Escalation Poisoning Without Governance}
 \label{subsec:e2}
@@ -350,7 +350,7 @@ In adherence to scientific integrity guidelines, Table~\ref{tab:implementation_s
 \toprule
 \textbf{Component / Experiment} & \textbf{Status} & \textbf{Source Module} \\
 \midrule
-Rolling Baseline Engine & Implemented & \texttt{ml/baseline/baseline\_engine.py} \\
+Rolling Baseline Engine & Verified (562k fitted) & \texttt{ml/baseline/baseline\_engine.py} \\
 4-Stage Governance Engine & Implemented & \texttt{ml/baseline/governance.py} \\
 Baseline Governance Task Queue & Implemented & \texttt{apps/baselines/tasks.py} \\
 Governance Logging & Implemented & \texttt{baselines\_governancelog} \\

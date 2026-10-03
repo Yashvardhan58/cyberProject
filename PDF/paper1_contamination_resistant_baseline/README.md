@@ -3,7 +3,7 @@
 ## Overview
 - **Title:** Contamination-Resistant Adaptive Baseline Governance for Defending UEBA Systems Against Slow-Escalation Poisoning
 - **Primary Research Focus:** Defending adaptive UEBA systems against slow-escalation baseline poisoning attacks while allowing legitimate behavioral drift.
-- **Dataset:** CMU CERT Insider Threat Dataset r5.2
+- **Dataset:** CMU CERT Insider Threat Dataset r5.2 (692,645 daily vectors; 562,594 baseline fitting / 130,051 evaluation records across 44 behavioral features).
 - **Key Experiments:** E2 (Ungoverned Poisoning Simulation), E3 (Governed Poisoning Defense Validation), E4 (Legitimate Role Change vs. Malicious Drift Classification).
 
 ## File Manifest

@@ -49,11 +49,8 @@ Governance Worker (-Q governance): Needed to run scheduled 4-stage drift audit t
 4. Steps Remaining to Produce the Final Correct Output
 Step	Action Item	Purpose
 Step 1	Create backend/.env & add ANTHROPIC_API_KEY	Enables live Claude 3.5 Sonnet incident explanations and interactive Q&A.
-Step 2	Add CERT r5.2 CSV files to backend/ml/data/raw/ (Optional if using synthetic demo data)	Feeds real insider threat logs into the ingestor.
-Step 3	Run Feature Extraction & Model Training	Trains the SVM, XGBoost+SMOTE, and Isolation Forest models and saves .joblib files.
-Step 4	Run Research Experiments E1 to E5	Generates real benchmark comparison tables, AUC/F1 scores, and baseline poisoning simulation results for your M.Tech dissertation/paper.
-Step 5	Launch Application Servers	Run Redis + Django Backend + React Frontend (or double-click 
-
-START_APPLICATION.bat
-) to view the live SOC dashboard.
+Step 2	Add CERT r5.2 CSV files to backend/ml/data/raw/	[COMPLETED] CERT r5.2 CSV files ingested and processed.
+Step 3	Run Feature Extraction & Model Training	[COMPLETED] Generated 692,645 vectors; trained SVM (50k sample, 2,072 SVs), XGBoost+SMOTE, Isolation Forest on 562,594 train / 130,051 test. All .joblib binaries and training_summary.json saved to backend/ml/models/saved/.
+Step 4	Run Research Experiments E1 to E5	Generates benchmark comparison tables, AUC/F1 scores, and baseline poisoning simulation results for dissertation/paper.
+Step 5	Launch Application Servers	Run Redis + Django Backend + React Frontend (or double-click START_APPLICATION.bat) to view the live SOC dashboard.
 5:28 PM

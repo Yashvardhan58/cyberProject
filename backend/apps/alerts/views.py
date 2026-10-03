@@ -3,11 +3,18 @@ API Views for Threat Alerts and SHAP Explanations.
 """
 
 from rest_framework import generics, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .models import Alert
 from .serializers import AlertListSerializer, AlertDetailSerializer
+
+
+class AlertPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
 
 
 class AlertListAPIView(generics.ListAPIView):
@@ -17,6 +24,7 @@ class AlertListAPIView(generics.ListAPIView):
     Supports filters: ?severity= (CRITICAL|HIGH|MEDIUM|LOW), ?status=, and ?search=.
     """
     serializer_class = AlertListSerializer
+    pagination_class = AlertPagination
 
     def get_queryset(self):
         queryset = Alert.objects.select_related("user", "risk_score").order_by("-created_at")

@@ -68,13 +68,13 @@ def run_training_pipeline() -> Dict[str, Any]:
     X_test = [[float(r[col]) for col in feature_cols] for r in test_records]
     y_test = [int(r["is_insider"]) for r in test_records]
 
-    # 2. Train SVM Baseline
+    # 2. Train SVM Baseline (Experiment E1)
     print("\n[1/4] Training SVM Baseline Classifier...")
     svm = SVMThreatClassifier(C=1.0, random_state=42)
-    svm_info = svm.train(X_train, y_train)
+    svm_info = svm.train(X_train, y_train, max_samples=50000)
     svm.save(saved_models_dir / "svm_model.joblib")
-    svm_preds = svm.predict_proba(X_test)
-    print("  SVM trained successfully.")
+    svm_val_preds = svm.predict_proba(X_test[:min(len(X_test), 5000)])
+    print(f"  SVM trained successfully on {svm_info.get('samples', 50000):,} samples ({svm_info.get('support_vectors', 0)} support vectors).")
 
     # 3. Train XGBoost + SMOTE
     print("\n[2/4] Training XGBoost Classifier with SMOTE...")
@@ -138,12 +138,20 @@ def run_training_pipeline() -> Dict[str, Any]:
     # Sort users by risk score descending (highest risk first)
     sorted_results = sorted(risk_results, key=lambda x: x["score"], reverse=True)
 
+    tp = sum(1 for r in risk_results if r["score"] >= 65 and r["is_insider"] == 1)
+    fa = sum(1 for r in risk_results if r["score"] >= 65 and r["is_insider"] == 0)
+    fn = sum(1 for r in risk_results if r["score"] < 65 and r["is_insider"] == 1)
+    tn = sum(1 for r in risk_results if r["score"] < 65 and r["is_insider"] == 0)
+    recall = (tp / (tp + fn) * 100) if (tp + fn) > 0 else 0.0
+    precision = (tp / (tp + fa) * 100) if (tp + fa) > 0 else 0.0
+    f1 = (2 * precision * recall / (precision + recall)) / 100 if (precision + recall) > 0 else 0.0
+
     print("\n" + "=" * 90)
-    print("                     EVALUATED TEST USERS & RISK RANKING TABLE")
+    print("                EVALUATED TEST USERS & RISK RANKING TABLE (TOP 30)")
     print("=" * 90)
     print(f"{'Rank':<5} | {'User ID':<12} | {'Role':<20} | {'Score':<7} | {'Severity':<9} | {'Is Insider?':<12} | {'Verdict'}")
     print("-" * 90)
-    for rank, r in enumerate(sorted_results, 1):
+    for rank, r in enumerate(sorted_results[:30], 1):
         actual = "YES (Threat)" if r["is_insider"] == 1 else "NO (Normal)"
         if r["score"] >= 65 and r["is_insider"] == 1:
             verdict = "[+] TRUE POSITIVE (Caught)"
@@ -158,6 +166,8 @@ def run_training_pipeline() -> Dict[str, Any]:
             f"{rank:<5} | {r['user_id']:<12} | {r['role']:<20} | {r['score']:<7} | "
             f"{r['severity']:<9} | {actual:<12} | {verdict}"
         )
+    if len(sorted_results) > 30:
+        print(f"... [{len(sorted_results) - 30} additional test records evaluated and saved to disk]")
     print("-" * 90)
 
     summary = {
@@ -173,6 +183,15 @@ def run_training_pipeline() -> Dict[str, Any]:
             "MEDIUM": sum(1 for r in risk_results if r["severity"] == "MEDIUM"),
             "LOW": sum(1 for r in risk_results if r["severity"] == "LOW"),
         },
+        "metrics": {
+            "true_positives": tp,
+            "false_alarms": fa,
+            "missed_threats": fn,
+            "true_negatives": tn,
+            "recall": round(recall, 2),
+            "precision": round(precision, 2),
+            "f1_score": round(f1, 4),
+        },
         "ranked_users": sorted_results
     }
 
@@ -184,6 +203,14 @@ def run_training_pipeline() -> Dict[str, Any]:
     print(f"  {saved_models_dir}")
     print(f"  Mean Risk Score: {summary['mean_test_risk_score']}")
     print(f"  Severities: {summary['test_severity_distribution']}")
+    print("\nRESEARCH PAPER EMPIRICAL METRICS:")
+    print(f"  • True Positives (Threats Caught): {tp}")
+    print(f"  • False Alarms (False Positives): {fa}")
+    print(f"  • Missed Threats (False Negatives): {fn}")
+    print(f"  • True Negatives (Normal Activity): {tn}")
+    print(f"  • Detection Recall: {recall:.2f}%")
+    print(f"  • Detection Precision: {precision:.2f}%")
+    print(f"  • Empirical F1-Score: {f1:.4f}")
     print("=" * 65)
     return summary
 

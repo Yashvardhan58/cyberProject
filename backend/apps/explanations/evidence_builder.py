@@ -83,9 +83,12 @@ class EvidenceBuilder:
             elif last_val - first_val > 5:
                 trend_summary = f"Gradual upward drift from {first_val} to {last_val}."
 
+        activity_date = alert.risk_score.date.strftime("%Y-%m-%d") if (alert.risk_score and hasattr(alert.risk_score, "date") and alert.risk_score.date) else alert.created_at.strftime("%Y-%m-%d")
+
         evidence_payload = {
             "alert_id": alert.id,
             "alert_title": alert.title,
+            "date": activity_date,
             "timestamp": alert.created_at.strftime("%Y-%m-%d %H:%M:%S UTC"),
             "employee_context": user_context,
             "risk_evaluation": score_context,

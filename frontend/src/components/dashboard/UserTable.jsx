@@ -7,7 +7,7 @@ import { getRiskBadgeClass, getRiskLevel } from '../../utils/formatters';
  * UserTable Component
  * User leaderboard sorted by risk score with quick profile routing.
  */
-export default function UserTable({ users = [], isLoading = false }) {
+export default function UserTable({ users = [], totalCount = null, isLoading = false }) {
   if (isLoading) {
     return (
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 text-center text-slate-400 text-sm">
@@ -35,7 +35,7 @@ export default function UserTable({ users = [], isLoading = false }) {
           </h3>
         </div>
         <span className="text-xs text-slate-400 font-mono">
-          {users.length} Active Accounts
+          {totalCount ? `${totalCount.toLocaleString()} Total Accounts (Top ${users.length} Shown)` : `${users.length} Active Accounts`}
         </span>
       </div>
 

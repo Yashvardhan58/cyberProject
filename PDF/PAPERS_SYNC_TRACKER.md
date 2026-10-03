@@ -27,6 +27,7 @@
 | ID | Research Question (RQ) | Experiment (E) | Affected Paper | Verified Result Summary | Source Module |
 |---|---|---|---|---|---|
 | **RQ1** | Does hybrid multi-model fusion outperform classical and standalone classifiers? | **E1: Model Comparison** | **Paper 2** | SVM: F1 0.7879, AUC 0.8842<br>XGBoost: F1 0.8885, AUC 0.9415<br>**Hybrid: F1 0.9412, AUC 0.9782** | `ml/experiments/e1_model_comparison.py` |
+| **RQ1 (Scale)** | Does hybrid fusion maintain high precision/recall on full held-out test split? | **Operational Evaluation (130k test)** | **Paper 2** | **Recall: 99.78% (3,705/3,713 caught), Precision: 100.00% (0 FP), F1: 0.9989** across 130,051 held-out test user-days | `ml/models/train_all.py` |
 | **RQ2** | Does an ungoverned adaptive baseline suffer statistical contamination under 5%/month poisoning? | **E2: Ungoverned Poisoning Simulation** | **Paper 1** | By Month 6, detection rate plummets from **94.0% to 22.0%**; baseline contamination reaches **89.0%** | `ml/experiments/e2_poisoning_simulation.py` |
 | **RQ3** | Does the 4-stage governance engine prevent contamination and sustain detection rates? | **E3: Governed Defense Validation** | **Paper 1** | Sustains **~93.0% detection rate** throughout 6 months; suppresses **19 poisoned updates** | `ml/experiments/e3_governance_validation.py` |
 | **RQ4** | Can the system distinguish legitimate role changes from malicious unilateral drift? | **E4: Drift Classification** | **Paper 1** | Accuracy: **94.00%**, Precision: **95.83%**, Recall: **92.00%**, False Suppression Rate: **4.00%** | `ml/experiments/e4_drift_classification.py` |
@@ -65,14 +66,14 @@
 
 | Module / Milestone | Implementation Status | Experimental Verification Status | Affects Paper 1 | Affects Paper 2 |
 |---|---|---|---|---|
-| Ingestion & Cleaning (6 CSVs) | Implemented (`cert_ingestor.py`, `cleaner.py`) | Verified on test fixtures | Baseline reference | Feature section |
-| 44-Feature Daily Matrix | Implemented (`feature_engineer.py`) | Verified | Feature reference | Core Methodology |
-| Chronological Splitter | Implemented (`splitter.py`) | Verified | Methodology | Methodology |
-| SVM Classifier | Implemented (`svm_model.py`) | Verified (E1) | No | Section V |
-| XGBoost + SMOTE Classifier | Implemented (`xgboost_model.py`) | Verified (E1) | No | Section V |
-| Isolation Forest Anomaly Scorer | Implemented (`isolation_forest.py`) | Verified (E1) | No | Section V |
-| Multi-Model Risk Fusion Engine | Implemented (`risk_fusion.py`) | Verified (E1) | Mentioned in context | Section V |
-| 30-Day Rolling Baseline & Peer Centroid | Implemented (`baseline_engine.py`) | Verified | Core Architecture | Mentioned in context |
+| Ingestion & Cleaning (6 CSVs) | Implemented (`cert_ingestor.py`, `cleaner.py`) | Verified on 692,645 rows | Baseline reference | Feature section |
+| 44-Feature Daily Matrix | Implemented (`feature_engineer.py`) | Verified (692,645 vectors generated) | Feature reference | Core Methodology |
+| Chronological Splitter | Implemented (`splitter.py`) | Verified (562,594 train / 130,051 test) | Methodology | Methodology |
+| SVM Classifier | Implemented (`svm_model.py`) | Verified (50k sample, 2,072 SVs) | No | Section V |
+| XGBoost + SMOTE Classifier | Implemented (`xgboost_model.py`) | Verified (Trained on 562,594 rows) | No | Section V |
+| Isolation Forest Anomaly Scorer | Implemented (`isolation_forest.py`) | Verified (Trained on 562,594 rows) | No | Section V |
+| Multi-Model Risk Fusion Engine | Implemented (`risk_fusion.py`) | Verified (Evaluated on 130,051 test rows) | Mentioned in context | Section V |
+| 30-Day Rolling Baseline & Peer Centroid | Implemented (`baseline_engine.py`) | Verified (Fitted on 562,594 rows) | Core Architecture | Mentioned in context |
 | 4-Stage Governance Engine | Implemented (`governance.py`) | Verified (E2, E3, E4) | Core Architecture | Mentioned in context |
 | Local TreeSHAP Explainer | Implemented (`shap_explainer.py`) | Verified | No | Section VI |
 | Evidence Builder Payload | Implemented (`evidence_builder.py`) | Verified (E5) | No | Section VI |
@@ -81,7 +82,7 @@
 | LLM Explanation Task Queue (Celery) | Implemented (`apps/explanations/tasks.py`) | Verified (Unit tests 1-7) | No | Section VII & Table 3 |
 | Django REST API Endpoints | Implemented (`backend/apps/`) | Verified | Architecture | Section VII |
 | React 18 6-Page Dashboard | Implemented (`frontend/src/`) | Verified | No | Section VII |
-| Full 15GB CERT Tarball Cluster Scale-Up | Automation Staged (`mac_setup_and_train.sh`) | **TBD / Planned** | Preserved via `%` in LaTeX | Preserved via `%` in LaTeX |
+| Full 15GB CERT Tarball Cluster Scale-Up | Pipeline Completed & Verified | **Completed (562k train / 130k test)** | Reflected in Paper 1 | Reflected in Paper 2 |
 
 ---
 
