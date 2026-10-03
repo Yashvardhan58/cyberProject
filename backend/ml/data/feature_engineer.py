@@ -141,6 +141,20 @@ class FeatureEngineer:
             df["is_external"] = ~df["to"].astype(str).str.contains(org_domain, case=False, na=False)
         else:
             df["is_external"] = False
+        # Ensure attachments and size are numeric counts
+        if "attachments" in df.columns:
+            if df["attachments"].dtype == object:
+                df["attachments"] = df["attachments"].apply(
+                    lambda x: len(str(x).split(";")) if pd.notna(x) and str(x).strip() and str(x) != "0" else 0
+                )
+            df["attachments"] = pd.to_numeric(df["attachments"], errors="coerce").fillna(0)
+        else:
+            df["attachments"] = 0
+
+        if "size" in df.columns:
+            df["size"] = pd.to_numeric(df["size"], errors="coerce").fillna(0)
+        else:
+            df["size"] = 0
 
         grouped = df.groupby(["user", "day"]).agg(
             email_sent_total=("date", "count"),
@@ -631,6 +645,11 @@ class FeatureEngineer:
             + df.get("http_suspicious_domain_count", 0) * 0.35
             + df.get("file_copy_to_usb_count", 0) * 0.30
         )
+
+        if df["is_insider"].sum() < 2:
+            threshold = risk_activity.quantile(0.97)
+            if threshold > 0:
+                df["is_insider"] = (risk_activity >= threshold).astype(int)
 
         if "user_deviation_score" not in df.columns:
             df["user_deviation_score"] = (risk_activity / (risk_activity + 5.0)).clip(0.05, 0.95).round(4)

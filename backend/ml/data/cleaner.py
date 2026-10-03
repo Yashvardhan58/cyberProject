@@ -69,12 +69,17 @@ class DataCleaner:
         
         # Fill missing attachment metadata with defaults
         if "attachments" in cleaned.columns:
-            cleaned["attachments"] = cleaned["attachments"].fillna(0).astype(int)
+            if cleaned["attachments"].dtype == object:
+                cleaned["attachments"] = cleaned["attachments"].apply(
+                    lambda x: len(str(x).split(";")) if pd.notna(x) and str(x).strip() and str(x) != "0" else 0
+                ).astype(int)
+            else:
+                cleaned["attachments"] = pd.to_numeric(cleaned["attachments"], errors="coerce").fillna(0).astype(int)
         else:
             cleaned["attachments"] = 0
             
         if "size" in cleaned.columns:
-            cleaned["size"] = cleaned["size"].fillna(0).astype(int)
+            cleaned["size"] = pd.to_numeric(cleaned["size"], errors="coerce").fillna(0).astype(int)
         else:
             cleaned["size"] = 0
             
