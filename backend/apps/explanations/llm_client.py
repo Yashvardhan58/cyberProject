@@ -67,8 +67,8 @@ def _call_google_gemini(
     system_prompt: str,
     user_msg: str,
     api_key: str,
-    model: str = "gemini-1.5-flash",
-    max_tokens: int = 400,
+    model: str = "gemini-3.8-flash",
+    max_tokens: int = 500,
 ) -> Dict[str, Any]:
     """Call Google AI Studio (Gemini) REST API."""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -91,7 +91,7 @@ def _call_google_gemini(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=25.0) as resp:
+    with urllib.request.urlopen(req, timeout=8.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
         text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
         return {
@@ -130,7 +130,7 @@ def _call_groq(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=25.0) as resp:
+    with urllib.request.urlopen(req, timeout=6.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
         text = result["choices"][0]["message"]["content"].strip()
         return {
@@ -144,8 +144,8 @@ def _call_openrouter(
     system_prompt: str,
     user_msg: str,
     api_key: str,
-    model: str = "meta-llama/llama-3.3-70b-instruct:free",
-    max_tokens: int = 400,
+    model: str = "qwen/qwen3.8-27b:free",
+    max_tokens: int = 500,
 ) -> Dict[str, Any]:
     """Call OpenRouter REST API."""
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -170,7 +170,7 @@ def _call_openrouter(
         },
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=25.0) as resp:
+    with urllib.request.urlopen(req, timeout=8.0) as resp:
         result = json.loads(resp.read().decode("utf-8"))
         text = result["choices"][0]["message"]["content"].strip()
         return {
@@ -341,21 +341,89 @@ class ClaudeExplanationClient:
         emp = evidence_payload.get("employee_context", {})
         risk = evidence_payload.get("risk_evaluation", {})
         top_feats = evidence_payload.get("top_contributing_features_shap", [])
+        trend = evidence_payload.get("seven_day_trend", {})
+        user_name = emp.get("name", "The employee")
+        score_val = risk.get("composite_risk_score", "85.0")
+        tier_val = risk.get("severity_tier", "HIGH")
 
-        if "why" in q_lower or "cause" in q_lower or "trigger" in q_lower:
-            f0 = top_feats[0] if top_feats else {"feature": "logon_count_after_hours", "shap_impact": 0.42}
+        # Intent A: Frequency, event counts, volume, occurrences
+        if any(k in q_lower for k in ["how many", "times", "frequency", "count", "occurrences", "how often", "how much", "volume"]):
+            lines = []
+            for f in top_feats:
+                fname = f["feature"].replace("_", " ").title()
+                val = f.get("observed_value", "N/A")
+                impact = f.get("shap_impact", 0)
+                lines.append(f"• {fname}: {val} (TreeSHAP weight: +{impact})")
+            feats_text = "\n".join(lines) if lines else "• Telemetry details recorded in SOC logs."
+            prog = trend.get("progression", [])
+            days_count = len(prog) if prog else 7
             return (
-                f"The elevated score of {risk.get('composite_risk_score', 'N/A')} was primarily triggered by {f0['feature'].replace('_', ' ')} "
-                f"with a SHAP attribution value of +{f0.get('shap_impact', '0.40')}. This represented an extreme divergence from {emp.get('name', 'user')}'s 30-day personal baseline."
+                f"Recorded telemetry and activity counts for {user_name}:\n\n"
+                f"{feats_text}\n\n"
+                f"Anomalous telemetry was detected spanning {days_count} monitoring checkpoints over the observation window. "
+                f"The volume and timing exhibited a sharp, sustained deviation from {emp.get('department', 'department')} peer baselines."
             )
-        elif "recommend" in q_lower or "next" in q_lower or "action" in q_lower:
+
+        # Intent B: Deep dive / In-depth detailed technical explanation
+        if any(k in q_lower for k in ["deep", "detail", "detailed", "breakdown", "comprehensive", "full analysis", "in depth"]):
+            lines = []
+            for i, f in enumerate(top_feats, 1):
+                fname = f["feature"].replace("_", " ").title()
+                lines.append(f"{i}. {fname}: Observed value {f.get('observed_value', 'N/A')} (SHAP: +{f.get('shap_impact', 'N/A')})")
+            feat_list = "\n".join(lines) if lines else "1. High after-hours data movement."
+            comp = risk.get("components", {})
+            xgb = round(comp.get("xgboost_malicious_probability", 0.75) * 100, 1)
+            iso = round(comp.get("isolation_forest_anomaly_score", 0.70) * 100, 1)
+            peer = comp.get("peer_group_deviation", 0.45)
+            drift = comp.get("drift_suspicion_score", 0.30)
             return (
-                f"Recommended Next Steps: 1) Verify whether {emp.get('name', 'user')} had approved authorization for after-hours removable media access. "
-                f"2) Correlate with firewall/proxy logs for external destination IP addresses. 3) Submit a True Positive verdict if unauthorized."
+                f"Detailed Threat Investigation Dossier for {user_name} ({emp.get('employee_id', 'N/A')}):\n\n"
+                f"1. Top Contributing Behavioral Features (TreeSHAP):\n{feat_list}\n\n"
+                f"2. ML Ensemble Risk Decomposition:\n"
+                f"• Composite Score: {score_val} [{tier_val}]\n"
+                f"• Supervised XGBoost (Malicious Intent Probability): {xgb}%\n"
+                f"• Isolation Forest (Statistical Unsupervised Outlier): {iso}%\n"
+                f"• Peer Group Centroid Deviation: {peer}\n"
+                f"• Rolling Baseline Drift Score: {drift}\n\n"
+                f"3. Historical Progression:\n"
+                f"{trend.get('summary', 'Escalation detected over recent monitoring checks.')}\n\n"
+                f"Assessment: High-confidence behavioral divergence from established {emp.get('department', 'department')} baseline requiring SOC verification."
             )
-        else:
+
+        # Intent C: Timeline, timestamp, and schedule inquiries
+        if any(k in q_lower for k in ["when", "time", "date", "timeline", "timestamp", "hour"]):
+            ts = evidence_payload.get("timestamp", "Recent incident window")
             return (
-                f"Based on the evidence payload for Alert #{evidence_payload.get('alert_id', 'N/A')}, "
-                f"{emp.get('name', 'User')} exhibited abnormal activity with top SHAP feature '{top_feats[0]['feature'] if top_feats else 'N/A'}'. "
-                f"All metrics remain strictly grounded in recorded CERT telemetry."
+                f"Incident Timeline & Active Windows for {user_name}:\n"
+                f"• Primary Incident Timestamp: {ts}\n"
+                f"• Operational Window: Anomalous activity concentrated during off-hours (01:00 AM – 04:00 AM).\n"
+                f"• Trend History: {trend.get('summary', 'Escalation observed across consecutive baseline checks.')}"
             )
+
+        # Intent D: Next steps & triage protocol
+        if any(k in q_lower for k in ["recommend", "next", "action", "do next", "what should"]):
+            return (
+                f"Recommended SOC Triage Protocol for {user_name}:\n"
+                f"1) Authorization Verification: Confirm whether off-hours removable media transfers were covered by an approved ticket.\n"
+                f"2) Telemetry Correlation: Cross-reference firewall, proxy, and DNS query logs for anomalous outbound destination IPs.\n"
+                f"3) Account Governance: Temporarily quarantine removable media permissions pending analyst review.\n"
+                f"4) Verdict Submission: Record a True Positive (TP) verdict in the Verdicts tab to update rolling model baselines."
+            )
+
+        # Intent E: Root cause / Why / Trigger
+        if any(k in q_lower for k in ["why", "cause", "trigger"]):
+            f0 = top_feats[0] if top_feats else {"feature": "file_copy_to_usb_bytes", "shap_impact": 0.42}
+            return (
+                f"{user_name} exhibited an elevated risk score of {score_val} [{tier_val}], primarily triggered by an abnormal surge in "
+                f"'{f0['feature'].replace('_', ' ')}' (TreeSHAP impact: +{f0.get('shap_impact', '0.42')}). "
+                f"This represented a high-confidence outlier deviating from established {emp.get('department', 'department')} peer baselines."
+            )
+
+        # Default: General evidence-grounded response
+        f0 = top_feats[0] if top_feats else {"feature": "anomalous behavioral telemetry", "shap_impact": 0.40}
+        return (
+            f"Based on CERT r5.2 behavioral telemetry, {user_name} is currently flagged with a composite risk score of "
+            f"{score_val} [{tier_val}]. The primary indicator is '{f0['feature'].replace('_', ' ')}' "
+            f"(TreeSHAP impact: +{f0.get('shap_impact', '0.40')}). "
+            f"You can ask for a 'detailed breakdown', 'activity counts', 'timeline', or 'next steps'."
+        )

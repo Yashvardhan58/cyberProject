@@ -65,7 +65,7 @@ class ChatSession(models.Model):
     """
     Multi-turn conversation session between a security analyst and Claude regarding an alert.
     """
-    alert = models.ForeignKey(Alert, on_delete=models.CASCADE, related_name="chat_sessions")
+    alert = models.ForeignKey(Alert, on_delete=models.SET_NULL, null=True, blank=True, related_name="chat_sessions")
     analyst_name = models.CharField(max_length=150, default="Security Analyst")
     session_token = models.CharField(max_length=100, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -76,7 +76,9 @@ class ChatSession(models.Model):
         ordering = ["-updated_at"]
 
     def __str__(self) -> str:
-        return f"Chat Session: Alert #{self.alert_id} ({self.analyst_name})"
+        if self.alert_id:
+            return f"Chat Session: Alert #{self.alert_id} ({self.analyst_name})"
+        return f"Chat Session: General ({self.analyst_name})"
 
 
 class ChatMessage(models.Model):

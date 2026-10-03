@@ -130,12 +130,16 @@ class AlertDetailSerializer(serializers.ModelSerializer):
         return obj.top_feature_summary or "file_copy_to_usb_bytes"
 
     def get_explanation_text(self, obj: Alert) -> str:
-        if hasattr(obj, "explanation") and obj.explanation:
-            return obj.explanation.explanation_text
+        if hasattr(obj, "explanations"):
+            latest_exp = obj.explanations.order_by("-created_at").first()
+            if latest_exp:
+                return latest_exp.text or latest_exp.explanation_text
         return "Explanation pending generation."
 
     def get_faithfulness_score(self, obj: Alert) -> float:
-        if hasattr(obj, "explanation") and obj.explanation:
-            return obj.explanation.faithfulness_score
+        if hasattr(obj, "explanations"):
+            latest_exp = obj.explanations.order_by("-created_at").first()
+            if latest_exp:
+                return latest_exp.faithfulness_score
         return 0.95
 

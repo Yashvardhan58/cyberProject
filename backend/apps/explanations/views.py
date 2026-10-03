@@ -149,18 +149,22 @@ class ExplanationListCreateAPIView(APIView):
     def get(self, request, alert_id: int = None):
         """
         GET /api/v1/explanations/alerts/{alert_id}/explanation/
-        Returns the latest explanation for an alert.
+        GET /api/v1/explanations/?alert_id=...
+        Returns the latest explanation for an alert, or list of recent explanations.
         """
-        if alert_id:
-            alert = get_object_or_404(Alert, pk=alert_id)
+        target_alert_id = alert_id or request.query_params.get("alert_id")
+        if target_alert_id:
+            alert = get_object_or_404(Alert, pk=target_alert_id)
             explanation = alert.explanations.order_by("-created_at").first()
             if not explanation:
                 # Trigger queue if no explanation exists
-                return self.post(request, alert_id=alert_id)
+                return self.post(request, alert_id=target_alert_id)
             serializer = ExplanationSerializer(explanation)
             return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
-        return Response({"status": "error", "error": "alert_id required"}, status=status.HTTP_400_BAD_REQUEST)
+        queryset = Explanation.objects.all().order_by("-created_at")[:50]
+        serializer = ExplanationSerializer(queryset, many=True)
+        return Response({"status": "success", "count": queryset.count(), "data": serializer.data}, status=status.HTTP_200_OK)
 
 
 class ExplanationDetailAPIView(APIView):
@@ -212,12 +216,30 @@ class ChatSessionDetailAPIView(APIView):
     Send messages and retrieve conversational history.
     """
     def get(self, request, session_token: str):
-        session = get_object_or_404(ChatSession, session_token=session_token)
+        session, created = ChatSession.objects.get_or_create(
+            session_token=session_token,
+            defaults={"analyst_name": "Security Analyst", "alert": None},
+        )
         serializer = ChatSessionSerializer(session)
         return Response({"status": "success", "data": serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request, session_token: str):
-        session = get_object_or_404(ChatSession, session_token=session_token)
+        alert_id = request.data.get("alert_id")
+        alert = None
+        if alert_id:
+            alert = Alert.objects.filter(pk=alert_id).first()
+
+        session, created = ChatSession.objects.get_or_create(
+            session_token=session_token,
+            defaults={
+                "analyst_name": request.data.get("analyst_name", "Security Analyst"),
+                "alert": alert,
+            },
+        )
+        if not session.alert and alert:
+            session.alert = alert
+            session.save(update_fields=["alert"])
+
         user_text = request.data.get("message", "").strip()
 
         if not user_text:
@@ -228,7 +250,16 @@ class ChatSessionDetailAPIView(APIView):
 
         ChatMessage.objects.create(session=session, role="user", content=user_text)
 
-        evidence = EvidenceBuilder.build_alert_evidence(session.alert)
+        # Context & Evidence Gathering
+        if session.alert:
+            evidence = EvidenceBuilder.build_alert_evidence(session.alert)
+        else:
+            evidence = EvidenceBuilder.build_context_evidence(user_text)
+            if evidence.get("alert_id"):
+                linked_alert = Alert.objects.filter(pk=evidence["alert_id"]).first()
+                if linked_alert:
+                    session.alert = linked_alert
+                    session.save(update_fields=["alert"])
         history = list(session.messages.values("role", "content"))
         user_context = {"name": session.analyst_name}
 

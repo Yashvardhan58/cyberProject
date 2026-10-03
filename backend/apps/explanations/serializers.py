@@ -50,9 +50,9 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 class ChatSessionSerializer(serializers.ModelSerializer):
     """Serializer for chat session with embedded message history."""
     messages = ChatMessageSerializer(many=True, read_only=True)
-    alert_title = serializers.CharField(source="alert.title", read_only=True)
-    alert_severity = serializers.CharField(source="alert.severity", read_only=True)
-    user_name = serializers.CharField(source="alert.user.name", read_only=True)
+    alert_title = serializers.CharField(source="alert.title", read_only=True, default=None, allow_null=True)
+    alert_severity = serializers.CharField(source="alert.severity", read_only=True, default=None, allow_null=True)
+    user_name = serializers.CharField(source="alert.user.name", read_only=True, default=None, allow_null=True)
 
     class Meta:
         model = ChatSession
