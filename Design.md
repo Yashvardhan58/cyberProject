@@ -5,7 +5,7 @@
 
 ## 1. Design Principles
 
-- Analyst-first: every design decision serves the security analyst's workflow
+- Analyst-first: every design decision serves the security analyst's workflow 
 - Information density over decoration: no unnecessary animations or gradients
 - Severity must be visually obvious at a glance (colour-coded throughout)
 - Explanation text must look different from UI chrome -- use distinct typography
